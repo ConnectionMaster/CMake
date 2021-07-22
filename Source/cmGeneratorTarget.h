@@ -459,6 +459,8 @@ public:
   void AddCUDAArchitectureFlags(std::string& flags) const;
   void AddCUDAToolkitFlags(std::string& flags) const;
 
+  void AddHIPArchitectureFlags(std::string& flags) const;
+
   void AddISPCTargetFlags(std::string& flags) const;
 
   std::string GetFeatureSpecificLinkRuleVariable(
@@ -495,6 +497,9 @@ public:
                       const std::string& language) const;
   std::vector<BT<std::string>> GetLinkOptions(
     std::string const& config, std::string const& language) const;
+
+  std::vector<BT<std::string>>& ResolveLinkerWrapper(
+    std::vector<BT<std::string>>& result, const std::string& language) const;
 
   void GetStaticLibraryLinkOptions(std::vector<std::string>& result,
                                    const std::string& config,
@@ -830,6 +835,7 @@ public:
                                     std::string const& config) const;
 
   std::string GetFortranModuleDirectory(std::string const& working_dir) const;
+  bool IsFortranBuildingInstrinsicModules() const;
 
   const std::string& GetSourcesProperty() const;
 
@@ -1035,13 +1041,15 @@ private:
                        std::string const& config,
                        const cmGeneratorTarget* headTarget,
                        bool usage_requirements_only,
-                       std::vector<cmLinkItem>& items,
-                       std::vector<cmLinkItem>& objects,
-                       bool& hadHeadSensitiveCondition,
-                       bool& hadContextSensitiveCondition,
-                       bool& hadLinkLanguageSensitiveCondition) const;
+                       cmLinkInterface& iface) const;
+
+  struct LookupLinkItemScope
+  {
+    cmLocalGenerator const* LG;
+  };
   cm::optional<cmLinkItem> LookupLinkItem(std::string const& n,
-                                          cmListFileBacktrace const& bt) const;
+                                          cmListFileBacktrace const& bt,
+                                          LookupLinkItemScope* scope) const;
 
   std::vector<BT<std::string>> GetSourceFilePaths(
     std::string const& config) const;
@@ -1108,6 +1116,12 @@ private:
 
   cmProp GetPropertyWithPairedLanguageSupport(std::string const& lang,
                                               const char* suffix) const;
+
+  void ComputeLinkImplementationRuntimeLibraries(
+    const std::string& config, cmOptionalLinkImplementation& impl) const;
+
+  void ComputeLinkInterfaceRuntimeLibraries(
+    const std::string& config, cmOptionalLinkInterface& iface) const;
 
 public:
   const std::vector<const cmGeneratorTarget*>& GetLinkImplementationClosure(

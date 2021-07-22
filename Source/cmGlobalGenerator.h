@@ -42,6 +42,7 @@ class cmDirectoryId;
 class cmExportBuildFileGenerator;
 class cmExternalMakefileProjectGenerator;
 class cmGeneratorTarget;
+class cmInstallRuntimeDependencySet;
 class cmLinkLineComputer;
 class cmLocalGenerator;
 class cmMakefile;
@@ -528,6 +529,11 @@ public:
 
   std::string NewDeferId();
 
+  cmInstallRuntimeDependencySet* CreateAnonymousRuntimeDependencySet();
+
+  cmInstallRuntimeDependencySet* GetNamedRuntimeDependencySet(
+    const std::string& name);
+
 protected:
   // for a project collect all its targets by following depend
   // information, and also collect all the targets
@@ -590,7 +596,7 @@ protected:
   void AddGlobalTarget_RebuildCache(
     std::vector<GlobalTargetInfo>& targets) const;
   void AddGlobalTarget_Install(std::vector<GlobalTargetInfo>& targets);
-  cmTarget CreateGlobalTarget(GlobalTargetInfo const& gti, cmMakefile* mf);
+  void CreateGlobalTarget(GlobalTargetInfo const& gti, cmMakefile* mf);
 
   std::string FindMakeProgramFile;
   std::string ConfiguredFilesPath;
@@ -746,6 +752,11 @@ private:
   std::map<std::string, std::string> RealPaths;
 
   std::unordered_set<std::string> GeneratedFiles;
+
+  std::vector<std::unique_ptr<cmInstallRuntimeDependencySet>>
+    RuntimeDependencySets;
+  std::map<std::string, cmInstallRuntimeDependencySet*>
+    RuntimeDependencySetsByName;
 
 #if !defined(CMAKE_BOOTSTRAP)
   // Pool of file locks

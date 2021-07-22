@@ -279,7 +279,7 @@ void cmLocalNinjaGenerator::WriteNinjaRequiredVersion(std::ostream& os)
   std::string requiredVersion = cmGlobalNinjaGenerator::RequiredNinjaVersion();
 
   // Ninja generator uses the 'console' pool if available (>= 1.5)
-  if (this->GetGlobalNinjaGenerator()->SupportsConsolePool()) {
+  if (this->GetGlobalNinjaGenerator()->SupportsDirectConsole()) {
     requiredVersion =
       cmGlobalNinjaGenerator::RequiredNinjaVersionForConsolePool();
   }
@@ -698,8 +698,6 @@ void cmLocalNinjaGenerator::WriteCustomCommandBuildStatement(
           case cmPolicies::REQUIRED_IF_USED:
           case cmPolicies::REQUIRED_ALWAYS:
           case cmPolicies::NEW:
-            cmSystemTools::MakeDirectory(
-              cmStrCat(this->GetBinaryDirectory(), "/CMakeFiles/d"));
             depfile = ccg.GetInternalDepfile();
             break;
         }

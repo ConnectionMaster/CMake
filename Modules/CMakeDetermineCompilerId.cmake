@@ -150,6 +150,40 @@ function(CMAKE_DETERMINE_COMPILER_ID lang flagvar src)
     endif()
   endif()
 
+  # When invoked with HIPCC we need to extract the path to the underlying
+  # clang compiler when possible. This fixes the following issues:
+  #   env variables can change how hipcc behaves
+  #   allows us to properly find the binutils bundled with hip
+  if(CMAKE_${lang}_COMPILER_ID STREQUAL "ROCMClang"
+     AND CMAKE_${lang}_COMPILER MATCHES ".*hipcc")
+    get_filename_component(_hipcc_dir "${CMAKE_${lang}_COMPILER}" DIRECTORY)
+    execute_process(
+      COMMAND "${_hipcc_dir}/hipconfig"
+      --hipclangpath
+      OUTPUT_VARIABLE output
+      RESULT_VARIABLE result
+    )
+    if(result EQUAL 0 AND EXISTS "${output}")
+      if(lang STREQUAL "C")
+        set_property(CACHE CMAKE_${lang}_COMPILER PROPERTY VALUE "${output}/clang")
+        set(CMAKE_${lang}_COMPILER "${output}/clang" PARENT_SCOPE)
+      else()
+        set_property(CACHE CMAKE_${lang}_COMPILER PROPERTY VALUE "${output}/clang++")
+        set(CMAKE_${lang}_COMPILER "${output}/clang++" PARENT_SCOPE)
+      endif()
+    endif()
+    if(lang STREQUAL "HIP")
+      execute_process(
+        COMMAND "${_hipcc_dir}/hipconfig"
+        --rocmpath
+        OUTPUT_VARIABLE output
+        RESULT_VARIABLE result
+      )
+      if(result EQUAL 0)
+        set(_CMAKE_HIP_COMPILER_ROCM_ROOT "${output}" PARENT_SCOPE)
+      endif()
+    endif()
+  endif()
 
   if (COMPILER_QNXNTO AND CMAKE_${lang}_COMPILER_ID STREQUAL "GNU")
     execute_process(
@@ -688,7 +722,7 @@ Id flags: ${testflags} ${CMAKE_${lang}_COMPILER_ID_FLAGS_ALWAYS}
   # Check the result of compilation.
   if(CMAKE_${lang}_COMPILER_ID_RESULT
      # Intel Fortran warns and ignores preprocessor lines without /fpp
-     OR CMAKE_${lang}_COMPILER_ID_OUTPUT MATCHES "Bad # preprocessor line"
+     OR CMAKE_${lang}_COMPILER_ID_OUTPUT MATCHES "warning #5117: Bad # preprocessor line"
      )
     # Compilation failed.
     set(MSG
@@ -699,7 +733,10 @@ ${CMAKE_${lang}_COMPILER_ID_RESULT}
 ${CMAKE_${lang}_COMPILER_ID_OUTPUT}
 
 ")
-    file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log "${MSG}")
+    # Log the output unless we recognize it as a known-bad case.
+    if(NOT CMAKE_${lang}_COMPILER_ID_OUTPUT MATCHES "warning #5117: Bad # preprocessor line")
+      file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log "${MSG}")
+    endif()
 
     # Some languages may know the correct/desired set of flags and want to fail right away if they don't work.
     # This is currently only used by CUDA.
@@ -978,9 +1015,6 @@ function(CMAKE_DETERMINE_COMPILER_ID_CHECK lang file)
     endif()
 
   endif()
-  if(NOT DEFINED CMAKE_EXECUTABLE_FORMAT)
-    set(CMAKE_EXECUTABLE_FORMAT)
-  endif()
   # Return the information extracted.
   set(CMAKE_${lang}_COMPILER_ID "${CMAKE_${lang}_COMPILER_ID}" PARENT_SCOPE)
   set(CMAKE_${lang}_PLATFORM_ID "${CMAKE_${lang}_PLATFORM_ID}" PARENT_SCOPE)
@@ -992,7 +1026,6 @@ function(CMAKE_DETERMINE_COMPILER_ID_CHECK lang file)
   set(CMAKE_${lang}_COMPILER_WRAPPER "${COMPILER_WRAPPER}" PARENT_SCOPE)
   set(CMAKE_${lang}_SIMULATE_ID "${CMAKE_${lang}_SIMULATE_ID}" PARENT_SCOPE)
   set(CMAKE_${lang}_SIMULATE_VERSION "${CMAKE_${lang}_SIMULATE_VERSION}" PARENT_SCOPE)
-  set(CMAKE_EXECUTABLE_FORMAT "${CMAKE_EXECUTABLE_FORMAT}" PARENT_SCOPE)
   set(COMPILER_QNXNTO "${COMPILER_QNXNTO}" PARENT_SCOPE)
   set(CMAKE_${lang}_STANDARD_COMPUTED_DEFAULT "${CMAKE_${lang}_STANDARD_COMPUTED_DEFAULT}" PARENT_SCOPE)
 endfunction()

@@ -945,7 +945,8 @@ void cmMakefileTargetGenerator::WriteObjectRuleFiles(
     std::string compilerLauncher;
     if (!compileCommands.empty() &&
         (lang == "C" || lang == "CXX" || lang == "Fortran" || lang == "CUDA" ||
-         lang == "ISPC" || lang == "OBJC" || lang == "OBJCXX")) {
+         lang == "HIP" || lang == "ISPC" || lang == "OBJC" ||
+         lang == "OBJCXX")) {
       std::string const clauncher_prop = lang + "_COMPILER_LAUNCHER";
       cmProp clauncher = this->GeneratorTarget->GetProperty(clauncher_prop);
       if (cmNonempty(clauncher)) {
@@ -1379,6 +1380,13 @@ void cmMakefileTargetGenerator::WriteTargetDependRules()
     << "set(CMAKE_Fortran_TARGET_MODULE_DIR \""
     << this->GeneratorTarget->GetFortranModuleDirectory(working_dir)
     << "\")\n";
+
+  if (this->GeneratorTarget->IsFortranBuildingInstrinsicModules()) {
+    *this->InfoFileStream
+      << "\n"
+      << "# Fortran compiler is building intrinsic modules.\n"
+      << "set(CMAKE_Fortran_TARGET_BUILDING_INSTRINSIC_MODULES ON) \n";
+  }
   /* clang-format on */
 
   // and now write the rule to use it

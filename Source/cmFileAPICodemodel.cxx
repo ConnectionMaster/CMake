@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include <cm/string_view>
 #include <cmext/algorithm>
 
 #include <cm3p/json/value.h>
@@ -29,11 +30,14 @@
 #include "cmInstallExportGenerator.h"
 #include "cmInstallFilesGenerator.h"
 #include "cmInstallGenerator.h"
+#include "cmInstallGetRuntimeDependenciesGenerator.h"
 #include "cmInstallImportedRuntimeArtifactsGenerator.h"
+#include "cmInstallRuntimeDependencySet.h"
+#include "cmInstallRuntimeDependencySetGenerator.h"
 #include "cmInstallScriptGenerator.h"
 #include "cmInstallSubdirectoryGenerator.h"
 #include "cmInstallTargetGenerator.h"
-#include "cmLinkLineComputer.h"
+#include "cmLinkLineComputer.h" // IWYU pragma: keep
 #include "cmListFileCache.h"
 #include "cmLocalGenerator.h"
 #include "cmMakefile.h"
@@ -877,8 +881,10 @@ Json::Value DirectoryObject::DumpInstaller(cmInstallGenerator* gen)
   assert(gen);
   Json::Value installer = Json::objectValue;
 
-  // Exclude subdirectory installers.  They are implementation details.
-  if (dynamic_cast<cmInstallSubdirectoryGenerator*>(gen)) {
+  // Exclude subdirectory installers and file(GET_RUNTIME_DEPENDENCIES)
+  // installers. They are implementation details.
+  if (dynamic_cast<cmInstallSubdirectoryGenerator*>(gen) ||
+      dynamic_cast<cmInstallGetRuntimeDependenciesGenerator*>(gen)) {
     return installer;
   }
 
@@ -1019,6 +1025,24 @@ Json::Value DirectoryObject::DumpInstaller(cmInstallGenerator* gen)
       installImportedRuntimeArtifacts->GetDestination(this->Config);
     if (installImportedRuntimeArtifacts->GetOptional()) {
       installer["isOptional"] = true;
+    }
+  } else if (auto* installRuntimeDependencySet =
+               dynamic_cast<cmInstallRuntimeDependencySetGenerator*>(gen)) {
+    installer["type"] = "runtimeDependencySet";
+    installer["destination"] =
+      installRuntimeDependencySet->GetDestination(this->Config);
+    std::string name(
+      installRuntimeDependencySet->GetRuntimeDependencySet()->GetName());
+    if (!name.empty()) {
+      installer["runtimeDependencySetName"] = name;
+    }
+    switch (installRuntimeDependencySet->GetDependencyType()) {
+      case cmInstallRuntimeDependencySetGenerator::DependencyType::Framework:
+        installer["runtimeDependencySetType"] = "framework";
+        break;
+      case cmInstallRuntimeDependencySetGenerator::DependencyType::Library:
+        installer["runtimeDependencySetType"] = "library";
+        break;
     }
   }
 
@@ -1756,9 +1780,10 @@ Json::Value Target::DumpLinkCommandFragments()
   std::vector<BT<std::string>> linkPath;
   std::vector<BT<std::string>> linkLibs;
   cmLocalGenerator* lg = this->GT->GetLocalGenerator();
-  cmLinkLineComputer linkLineComputer(lg,
-                                      lg->GetStateSnapshot().GetDirectory());
-  lg->GetTargetFlags(&linkLineComputer, this->Config, linkLibs,
+  cmGlobalGenerator* gg = this->GT->GetGlobalGenerator();
+  std::unique_ptr<cmLinkLineComputer> linkLineComputer =
+    gg->CreateLinkLineComputer(lg, lg->GetStateSnapshot().GetDirectory());
+  lg->GetTargetFlags(linkLineComputer.get(), this->Config, linkLibs,
                      linkLanguageFlags, linkFlags, frameworkPath, linkPath,
                      this->GT);
   linkLanguageFlags = cmTrimWhitespace(linkLanguageFlags);

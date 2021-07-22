@@ -36,6 +36,9 @@ const char* const CXX_FEATURES[] = { nullptr FOR_EACH_CXX_FEATURE(
 
 const char* const CUDA_FEATURES[] = { nullptr FOR_EACH_CUDA_FEATURE(
   FEATURE_STRING) };
+
+const char* const HIP_FEATURES[] = { nullptr FOR_EACH_HIP_FEATURE(
+  FEATURE_STRING) };
 #undef FEATURE_STRING
 
 struct StandardNeeded
@@ -306,8 +309,7 @@ struct StanardLevelComputer
 };
 
 std::unordered_map<std::string, StanardLevelComputer> StandardComputerMapping =
-  {
-    { "C",
+  { { "C",
       StanardLevelComputer{
         "C", std::vector<int>{ 90, 99, 11, 17, 23 },
         std::vector<std::string>{ "90", "99", "11", "17", "23" } } },
@@ -320,13 +322,17 @@ std::unordered_map<std::string, StanardLevelComputer> StandardComputerMapping =
         "CUDA", std::vector<int>{ 03, 11, 14, 17, 20, 23 },
         std::vector<std::string>{ "03", "11", "14", "17", "20", "23" } } },
     { "OBJC",
-      StanardLevelComputer{ "OBJC", std::vector<int>{ 90, 99, 11 },
-                            std::vector<std::string>{ "90", "99", "11" } } },
+      StanardLevelComputer{
+        "OBJC", std::vector<int>{ 90, 99, 11, 17, 23 },
+        std::vector<std::string>{ "90", "99", "11", "17", "23" } } },
     { "OBJCXX",
       StanardLevelComputer{
         "OBJCXX", std::vector<int>{ 98, 11, 14, 17, 20, 23 },
         std::vector<std::string>{ "98", "11", "14", "17", "20", "23" } } },
-  };
+    { "HIP",
+      StanardLevelComputer{
+        "HIP", std::vector<int>{ 98, 11, 14, 17, 20, 23 },
+        std::vector<std::string>{ "98", "11", "14", "17", "20", "23" } } } };
 }
 
 std::string cmStandardLevelResolver::GetCompileOptionDef(
@@ -381,6 +387,10 @@ bool cmStandardLevelResolver::CheckCompileFeaturesAvailable(
     return false;
   }
 
+  if (!this->Makefile->GetGlobalGenerator()->GetLanguageEnabled(lang)) {
+    return true;
+  }
+
   const char* features = this->CompileFeaturesAvailable(lang, error);
   if (!features) {
     return false;
@@ -432,6 +442,13 @@ bool cmStandardLevelResolver::CompileFeatureKnown(
                  cmStrCmp(feature)) != cm::cend(CUDA_FEATURES);
   if (isCudaFeature) {
     lang = "CUDA";
+    return true;
+  }
+  bool isHIPFeature =
+    std::find_if(cm::cbegin(HIP_FEATURES) + 1, cm::cend(HIP_FEATURES),
+                 cmStrCmp(feature)) != cm::cend(HIP_FEATURES);
+  if (isHIPFeature) {
+    lang = "HIP";
     return true;
   }
   std::ostringstream e;

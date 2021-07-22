@@ -12,6 +12,7 @@ dnf install --setopt=install_weak_deps=False -y \
 # Install development tools.
 dnf install --setopt=install_weak_deps=False -y \
     clang-tools-extra \
+    compiler-rt \
     gcc-c++ \
     git-core \
     make
@@ -35,6 +36,10 @@ dnf install --setopt=install_weak_deps=False -y \
     jq \
     which
 
+# Packages needed to test CPack.
+dnf install --setopt=install_weak_deps=False -y \
+    rpm-build
+
 # Packages needed to test find modules.
 dnf install --setopt=install_weak_deps=False -y \
     alsa-lib-devel \
@@ -46,6 +51,7 @@ dnf install --setopt=install_weak_deps=False -y \
     doxygen \
     expat-devel \
     fontconfig-devel \
+    freeglut-devel \
     freetype-devel \
     gdal-devel \
     gettext \

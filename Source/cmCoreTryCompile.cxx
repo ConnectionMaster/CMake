@@ -189,6 +189,8 @@ SETUP_LANGUAGE(cuda_properties, CUDA);
 // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
 SETUP_LANGUAGE(fortran_properties, Fortran);
 // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+SETUP_LANGUAGE(hip_properties, HIP);
+// NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
 SETUP_LANGUAGE(objc_properties, OBJC);
 // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
 SETUP_LANGUAGE(objcxx_properties, OBJCXX);
@@ -201,6 +203,8 @@ SETUP_LANGUAGE(swift_properties, Swift);
 std::string const kCMAKE_CUDA_ARCHITECTURES = "CMAKE_CUDA_ARCHITECTURES";
 std::string const kCMAKE_CUDA_RUNTIME_LIBRARY = "CMAKE_CUDA_RUNTIME_LIBRARY";
 std::string const kCMAKE_ENABLE_EXPORTS = "CMAKE_ENABLE_EXPORTS";
+std::string const kCMAKE_HIP_ARCHITECTURES = "CMAKE_HIP_ARCHITECTURES";
+std::string const kCMAKE_HIP_RUNTIME_LIBRARY = "CMAKE_HIP_RUNTIME_LIBRARY";
 std::string const kCMAKE_ISPC_INSTRUCTION_SETS = "CMAKE_ISPC_INSTRUCTION_SETS";
 std::string const kCMAKE_ISPC_HEADER_SUFFIX = "CMAKE_ISPC_HEADER_SUFFIX";
 std::string const kCMAKE_LINK_SEARCH_END_STATIC =
@@ -274,6 +278,7 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
   LanguageStandardState cState("C");
   LanguageStandardState cudaState("CUDA");
   LanguageStandardState cxxState("CXX");
+  LanguageStandardState hipState("HIP");
   LanguageStandardState objcState("OBJC");
   LanguageStandardState objcxxState("OBJCXX");
   std::vector<std::string> targets;
@@ -323,6 +328,7 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
     } else if (cState.UpdateIfMatches(argv, i) ||
                cxxState.UpdateIfMatches(argv, i) ||
                cudaState.UpdateIfMatches(argv, i) ||
+               hipState.UpdateIfMatches(argv, i) ||
                objcState.UpdateIfMatches(argv, i) ||
                objcxxState.UpdateIfMatches(argv, i)) {
       continue;
@@ -426,6 +432,9 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
       return -1;
     }
     if (!cudaState.Validate(this->Makefile)) {
+      return -1;
+    }
+    if (!hipState.Validate(this->Makefile)) {
       return -1;
     }
     if (!cxxState.Validate(this->Makefile)) {
@@ -559,6 +568,13 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
           this->Makefile->GetDefinition(kCMAKE_ARMClang_CMP0123)) {
       fprintf(fout, "cmake_policy(SET CMP0123 %s)\n",
               *cmp0123 == "NEW"_s ? "NEW" : "OLD");
+    }
+
+    /* Set cache/normal variable policy to match outer project.
+       It may affect toolchain files.  */
+    if (this->Makefile->GetPolicyStatus(cmPolicies::CMP0126) !=
+        cmPolicies::NEW) {
+      fprintf(fout, "cmake_policy(SET CMP0126 OLD)\n");
     }
 
     std::string projectLangs;
@@ -715,6 +731,8 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
       vars.insert(
         &fortran_properties[lang_property_start],
         &fortran_properties[lang_property_start + lang_property_size]);
+      vars.insert(&hip_properties[lang_property_start],
+                  &hip_properties[lang_property_start + lang_property_size]);
       vars.insert(&objc_properties[lang_property_start],
                   &objc_properties[lang_property_start + lang_property_size]);
       vars.insert(
@@ -727,6 +745,8 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
       vars.insert(kCMAKE_CUDA_ARCHITECTURES);
       vars.insert(kCMAKE_CUDA_RUNTIME_LIBRARY);
       vars.insert(kCMAKE_ENABLE_EXPORTS);
+      vars.insert(kCMAKE_HIP_ARCHITECTURES);
+      vars.insert(kCMAKE_HIP_RUNTIME_LIBRARY);
       vars.insert(kCMAKE_ISPC_INSTRUCTION_SETS);
       vars.insert(kCMAKE_ISPC_HEADER_SUFFIX);
       vars.insert(kCMAKE_LINK_SEARCH_END_STATIC);
@@ -761,6 +781,8 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
         vars.insert(
           &fortran_properties[pie_property_start],
           &fortran_properties[pie_property_start + pie_property_size]);
+        vars.insert(&hip_properties[pie_property_start],
+                    &hip_properties[pie_property_start + pie_property_size]);
         vars.insert(&objc_properties[pie_property_start],
                     &objc_properties[pie_property_start + pie_property_size]);
         vars.insert(
@@ -835,6 +857,7 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
     cState.Enabled(testLangs.find("C") != testLangs.end());
     cxxState.Enabled(testLangs.find("CXX") != testLangs.end());
     cudaState.Enabled(testLangs.find("CUDA") != testLangs.end());
+    hipState.Enabled(testLangs.find("HIP") != testLangs.end());
     objcState.Enabled(testLangs.find("OBJC") != testLangs.end());
     objcxxState.Enabled(testLangs.find("OBJCXX") != testLangs.end());
 
@@ -842,7 +865,7 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
     bool honorStandard = true;
 
     if (cState.DidNone() && cxxState.DidNone() && objcState.DidNone() &&
-        objcxxState.DidNone() && cudaState.DidNone()) {
+        objcxxState.DidNone() && cudaState.DidNone() && hipState.DidNone()) {
       switch (this->Makefile->GetPolicyStatus(cmPolicies::CMP0067)) {
         case cmPolicies::WARN:
           warnCMP0067 = this->Makefile->PolicyOptionalWarningEnabled(
@@ -872,6 +895,8 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
                                      warnCMP0067, warnCMP0067Variables);
     cudaState.LoadUnsetPropertyValues(this->Makefile, honorStandard,
                                       warnCMP0067, warnCMP0067Variables);
+    hipState.LoadUnsetPropertyValues(this->Makefile, honorStandard,
+                                     warnCMP0067, warnCMP0067Variables);
     objcState.LoadUnsetPropertyValues(this->Makefile, honorStandard,
                                       warnCMP0067, warnCMP0067Variables);
     objcxxState.LoadUnsetPropertyValues(this->Makefile, honorStandard,
@@ -894,6 +919,7 @@ int cmCoreTryCompile::TryCompileCode(std::vector<std::string> const& argv,
     cState.WriteProperties(fout, targetName);
     cxxState.WriteProperties(fout, targetName);
     cudaState.WriteProperties(fout, targetName);
+    hipState.WriteProperties(fout, targetName);
     objcState.WriteProperties(fout, targetName);
     objcxxState.WriteProperties(fout, targetName);
 

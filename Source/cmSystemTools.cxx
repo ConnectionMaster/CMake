@@ -14,11 +14,13 @@
 
 #include "cmSystemTools.h"
 
+#include <cm/optional>
 #include <cmext/algorithm>
 
 #include <cm3p/uv.h>
 
 #include "cmDuration.h"
+#include "cmELF.h"
 #include "cmMessageMetadata.h"
 #include "cmProcessOutput.h"
 #include "cmRange.h"
@@ -45,10 +47,6 @@
 #  include "cmCryptoHash.h"
 #endif
 
-#if defined(CMake_USE_ELF_PARSER)
-#  include "cmELF.h"
-#endif
-
 #if defined(CMake_USE_MACH_PARSER)
 #  include "cmMachO.h"
 #endif
@@ -65,6 +63,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include <utility>
@@ -2444,14 +2443,12 @@ void cmSystemTools::MakefileColorEcho(int color, const char* message,
 bool cmSystemTools::GuessLibrarySOName(std::string const& fullPath,
                                        std::string& soname)
 {
-// For ELF shared libraries use a real parser to get the correct
-// soname.
-#if defined(CMake_USE_ELF_PARSER)
+  // For ELF shared libraries use a real parser to get the correct
+  // soname.
   cmELF elf(fullPath.c_str());
   if (elf) {
     return elf.GetSOName(soname);
   }
-#endif
 
   // If the file is not a symlink we have no guess for its soname.
   if (!cmSystemTools::FileIsSymlink(fullPath)) {
@@ -2489,7 +2486,6 @@ bool cmSystemTools::GuessLibraryInstallName(std::string const& fullPath,
   return false;
 }
 
-#if defined(CMake_USE_ELF_PARSER) || defined(CMake_USE_XCOFF_PARSER)
 std::string::size_type cmSystemToolsFindRPath(cm::string_view const& have,
                                               cm::string_view const& want)
 {
@@ -2521,9 +2517,8 @@ std::string::size_type cmSystemToolsFindRPath(cm::string_view const& have,
   // The desired rpath was not found.
   return std::string::npos;
 }
-#endif
 
-#if defined(CMake_USE_ELF_PARSER)
+namespace {
 struct cmSystemToolsRPathInfo
 {
   unsigned long Position;
@@ -2531,15 +2526,15 @@ struct cmSystemToolsRPathInfo
   std::string Name;
   std::string Value;
 };
-#endif
 
-// FIXME: Dispatch if multiple formats are supported.
-#if defined(CMake_USE_ELF_PARSER)
-bool cmSystemTools::ChangeRPath(std::string const& file,
-                                std::string const& oldRPath,
-                                std::string const& newRPath,
-                                bool removeEnvironmentRPath, std::string* emsg,
-                                bool* changed)
+using EmptyCallback = std::function<bool(std::string*, const cmELF&)>;
+using AdjustCallback = std::function<bool(
+  cm::optional<std::string>&, const std::string&, const char*, std::string*)>;
+
+cm::optional<bool> AdjustRPathELF(std::string const& file,
+                                  const EmptyCallback& emptyCallback,
+                                  const AdjustCallback& adjustCallback,
+                                  std::string* emsg, bool* changed)
 {
   if (changed) {
     *changed = false;
@@ -2550,6 +2545,9 @@ bool cmSystemTools::ChangeRPath(std::string const& file,
   {
     // Parse the ELF binary.
     cmELF elf(file.c_str());
+    if (!elf) {
+      return cm::nullopt; // Not a valid ELF file.
+    }
 
     // Get the RPATH and RUNPATH entries from it.
     int se_count = 0;
@@ -2566,17 +2564,7 @@ bool cmSystemTools::ChangeRPath(std::string const& file,
       ++se_count;
     }
     if (se_count == 0) {
-      if (newRPath.empty()) {
-        // The new rpath is empty and there is no rpath anyway so it is
-        // okay.
-        return true;
-      }
-      if (emsg) {
-        *emsg =
-          cmStrCat("No valid ELF RPATH or RUNPATH entry exists in the file; ",
-                   elf.GetErrorMessage());
-      }
-      return false;
+      return emptyCallback(emsg, elf);
     }
 
     for (int i = 0; i < se_count; ++i) {
@@ -2586,68 +2574,38 @@ bool cmSystemTools::ChangeRPath(std::string const& file,
         continue;
       }
 
-      // Make sure the current rpath contains the old rpath.
-      std::string::size_type pos =
-        cmSystemToolsFindRPath(se[i]->Value, oldRPath);
-      if (pos == std::string::npos) {
-        // If it contains the new rpath instead then it is okay.
-        if (cmSystemToolsFindRPath(se[i]->Value, newRPath) !=
-            std::string::npos) {
-          remove_rpath = false;
-          continue;
-        }
-        if (emsg) {
-          std::ostringstream e;
-          /* clang-format off */
-        e << "The current " << se_name[i] << " is:\n"
-          << "  " << se[i]->Value << "\n"
-          << "which does not contain:\n"
-          << "  " << oldRPath << "\n"
-          << "as was expected.";
-          /* clang-format on */
-          *emsg = e.str();
-        }
-        return false;
-      }
-
       // Store information about the entry in the file.
       rp[rp_count].Position = se[i]->Position;
       rp[rp_count].Size = se[i]->Size;
       rp[rp_count].Name = se_name[i];
 
-      std::string::size_type prefix_len = pos;
-
-      // If oldRPath was at the end of the file's RPath, and newRPath is empty,
-      // we should remove the unnecessary ':' at the end.
-      if (newRPath.empty() && pos > 0 && se[i]->Value[pos - 1] == ':' &&
-          pos + oldRPath.length() == se[i]->Value.length()) {
-        prefix_len--;
-      }
-
-      // Construct the new value which preserves the part of the path
-      // not being changed.
-      if (!removeEnvironmentRPath) {
-        rp[rp_count].Value = se[i]->Value.substr(0, prefix_len);
-      }
-      rp[rp_count].Value += newRPath;
-      rp[rp_count].Value += se[i]->Value.substr(pos + oldRPath.length());
-
-      if (!rp[rp_count].Value.empty()) {
-        remove_rpath = false;
-      }
-
-      // Make sure there is enough room to store the new rpath and at
-      // least one null terminator.
-      if (rp[rp_count].Size < rp[rp_count].Value.length() + 1) {
-        if (emsg) {
-          *emsg = cmStrCat("The replacement path is too long for the ",
-                           se_name[i], " entry.");
-        }
+      // Adjust the rpath.
+      cm::optional<std::string> outRPath;
+      if (!adjustCallback(outRPath, se[i]->Value, se_name[i], emsg)) {
         return false;
       }
 
-      // This entry is ready for update.
-      ++rp_count;
+      if (outRPath) {
+        if (!outRPath->empty()) {
+          remove_rpath = false;
+        }
+
+        // Make sure there is enough room to store the new rpath and at
+        // least one null terminator.
+        if (rp[rp_count].Size < outRPath->length() + 1) {
+          if (emsg) {
+            *emsg = cmStrCat("The replacement path is too long for the ",
+                             se_name[i], " entry.");
+          }
+          return false;
+        }
+
+        // This entry is ready for update.
+        rp[rp_count].Value = std::move(*outRPath);
+        ++rp_count;
+      } else {
+        remove_rpath = false;
+      }
     }
   }
 
@@ -2706,19 +2664,121 @@ bool cmSystemTools::ChangeRPath(std::string const& file,
   }
   return true;
 }
-#elif defined(CMake_USE_XCOFF_PARSER)
-bool cmSystemTools::ChangeRPath(std::string const& file,
-                                std::string const& oldRPath,
-                                std::string const& newRPath,
-                                bool removeEnvironmentRPath, std::string* emsg,
-                                bool* changed)
+
+std::function<bool(std::string*, const cmELF&)> MakeEmptyCallback(
+  const std::string& newRPath)
+{
+  return [newRPath](std::string* emsg, const cmELF& elf) -> bool {
+    if (newRPath.empty()) {
+      // The new rpath is empty and there is no rpath anyway so it is
+      // okay.
+      return true;
+    }
+    if (emsg) {
+      *emsg =
+        cmStrCat("No valid ELF RPATH or RUNPATH entry exists in the file; ",
+                 elf.GetErrorMessage());
+    }
+    return false;
+  };
+}
+}
+
+cm::optional<bool> ChangeRPathELF(std::string const& file,
+                                  std::string const& oldRPath,
+                                  std::string const& newRPath,
+                                  bool removeEnvironmentRPath,
+                                  std::string* emsg, bool* changed)
+{
+  auto adjustCallback = [oldRPath, newRPath, removeEnvironmentRPath](
+                          cm::optional<std::string>& outRPath,
+                          const std::string& inRPath, const char* se_name,
+                          std::string* emsg2) -> bool {
+    // Make sure the current rpath contains the old rpath.
+    std::string::size_type pos = cmSystemToolsFindRPath(inRPath, oldRPath);
+    if (pos == std::string::npos) {
+      // If it contains the new rpath instead then it is okay.
+      if (cmSystemToolsFindRPath(inRPath, newRPath) != std::string::npos) {
+        return true;
+      }
+      if (emsg2) {
+        std::ostringstream e;
+        /* clang-format off */
+        e << "The current " << se_name << " is:\n"
+          << "  " << inRPath << "\n"
+          << "which does not contain:\n"
+          << "  " << oldRPath << "\n"
+          << "as was expected.";
+        /* clang-format on */
+        *emsg2 = e.str();
+      }
+      return false;
+    }
+
+    std::string::size_type prefix_len = pos;
+
+    // If oldRPath was at the end of the file's RPath, and newRPath is empty,
+    // we should remove the unnecessary ':' at the end.
+    if (newRPath.empty() && pos > 0 && inRPath[pos - 1] == ':' &&
+        pos + oldRPath.length() == inRPath.length()) {
+      prefix_len--;
+    }
+
+    // Construct the new value which preserves the part of the path
+    // not being changed.
+    outRPath.emplace();
+    if (!removeEnvironmentRPath) {
+      *outRPath += inRPath.substr(0, prefix_len);
+    }
+    *outRPath += newRPath;
+    *outRPath += inRPath.substr(pos + oldRPath.length());
+
+    return true;
+  };
+
+  return AdjustRPathELF(file, MakeEmptyCallback(newRPath), adjustCallback,
+                        emsg, changed);
+}
+
+static cm::optional<bool> SetRPathELF(std::string const& file,
+                                      std::string const& newRPath,
+                                      std::string* emsg, bool* changed)
+{
+  auto adjustCallback = [newRPath](cm::optional<std::string>& outRPath,
+                                   const std::string& inRPath,
+                                   const char* /*se_name*/, std::string *
+                                   /*emsg*/) -> bool {
+    if (inRPath != newRPath) {
+      outRPath = newRPath;
+    }
+    return true;
+  };
+
+  return AdjustRPathELF(file, MakeEmptyCallback(newRPath), adjustCallback,
+                        emsg, changed);
+}
+static cm::optional<bool> ChangeRPathXCOFF(std::string const& file,
+                                           std::string const& oldRPath,
+                                           std::string const& newRPath,
+                                           bool removeEnvironmentRPath,
+                                           std::string* emsg, bool* changed)
 {
   if (changed) {
     *changed = false;
   }
-
+#if !defined(CMake_USE_XCOFF_PARSER)
+  (void)file;
+  (void)oldRPath;
+  (void)newRPath;
+  (void)removeEnvironmentRPath;
+  (void)emsg;
+  return cm::nullopt;
+#else
   bool chg = false;
   cmXCOFF xcoff(file.c_str(), cmXCOFF::Mode::ReadWrite);
+  if (!xcoff) {
+    return cm::nullopt; // Not a valid XCOFF file
+  }
   if (cm::optional<cm::string_view> maybeLibPath = xcoff.GetLibPath()) {
     cm::string_view libPath = *maybeLibPath;
     // Make sure the current rpath contains the old rpath.
@@ -2774,17 +2834,47 @@ bool cmSystemTools::ChangeRPath(std::string const& file,
     *changed = chg;
   }
   return true;
+#endif
 }
-#else
-bool cmSystemTools::ChangeRPath(std::string const& /*file*/,
-                                std::string const& /*oldRPath*/,
-                                std::string const& /*newRPath*/,
-                                bool /*removeEnvironmentRPath*/,
-                                std::string* /*emsg*/, bool* /*changed*/)
+
+static cm::optional<bool> SetRPathXCOFF(std::string const& /*file*/,
+                                        std::string const& /*newRPath*/,
+                                        std::string* /*emsg*/,
+                                        bool* /*changed*/)
 {
+  return cm::nullopt; // Not implemented.
+}
+
+bool cmSystemTools::ChangeRPath(std::string const& file,
+                                std::string const& oldRPath,
+                                std::string const& newRPath,
+                                bool removeEnvironmentRPath, std::string* emsg,
+                                bool* changed)
+{
+  if (cm::optional<bool> result = ChangeRPathELF(
+        file, oldRPath, newRPath, removeEnvironmentRPath, emsg, changed)) {
+    return result.value();
+  }
+  if (cm::optional<bool> result = ChangeRPathXCOFF(
+        file, oldRPath, newRPath, removeEnvironmentRPath, emsg, changed)) {
+    return result.value();
+  }
   return false;
 }
-#endif
+
+bool cmSystemTools::SetRPath(std::string const& file,
+                             std::string const& newRPath, std::string* emsg,
+                             bool* changed)
+{
+  if (cm::optional<bool> result = SetRPathELF(file, newRPath, emsg, changed)) {
+    return result.value();
+  }
+  if (cm::optional<bool> result =
+        SetRPathXCOFF(file, newRPath, emsg, changed)) {
+    return result.value();
+  }
+  return false;
+}
 
 bool cmSystemTools::VersionCompare(cmSystemTools::CompareOp op,
                                    const char* lhss, const char* rhss)
@@ -2919,10 +3009,8 @@ int cmSystemTools::strverscmp(std::string const& lhs, std::string const& rhs)
   return cm_strverscmp(lhs.c_str(), rhs.c_str());
 }
 
-// FIXME: Dispatch if multiple formats are supported.
-#if defined(CMake_USE_ELF_PARSER)
-bool cmSystemTools::RemoveRPath(std::string const& file, std::string* emsg,
-                                bool* removed)
+static cm::optional<bool> RemoveRPathELF(std::string const& file,
+                                         std::string* emsg, bool* removed)
 {
   if (removed) {
     *removed = false;
@@ -2935,6 +3023,9 @@ bool cmSystemTools::RemoveRPath(std::string const& file, std::string* emsg,
   {
     // Parse the ELF binary.
     cmELF elf(file.c_str());
+    if (!elf) {
+      return cm::nullopt; // Not a valid ELF file.
+    }
 
     // Get the RPATH and RUNPATH entries from it and sort them by index
     // in the dynamic section header.
@@ -2984,8 +3075,7 @@ bool cmSystemTools::RemoveRPath(std::string const& file, std::string* emsg,
         entriesErased++;
         continue;
       }
-      if (cmELF::TagMipsRldMapRel != 0 &&
-          it->first == cmELF::TagMipsRldMapRel) {
+      if (it->first == cmELF::TagMipsRldMapRel && elf.IsMIPS()) {
         // Background: debuggers need to know the "linker map" which contains
         // the addresses each dynamic object is loaded at. Most arches use
         // the DT_DEBUG tag which the dynamic linker writes to (directly) and
@@ -3061,15 +3151,22 @@ bool cmSystemTools::RemoveRPath(std::string const& file, std::string* emsg,
   }
   return true;
 }
-#elif defined(CMake_USE_XCOFF_PARSER)
-bool cmSystemTools::RemoveRPath(std::string const& file, std::string* emsg,
-                                bool* removed)
+
+static cm::optional<bool> RemoveRPathXCOFF(std::string const& file,
+                                           std::string* emsg, bool* removed)
 {
   if (removed) {
     *removed = false;
   }
-
+#if !defined(CMake_USE_XCOFF_PARSER)
+  (void)file;
+  (void)emsg;
+  return cm::nullopt; // Cannot handle XCOFF files.
+#else
   cmXCOFF xcoff(file.c_str(), cmXCOFF::Mode::ReadWrite);
+  if (!xcoff) {
+    return cm::nullopt; // Not a valid XCOFF file.
+  }
   bool rm = xcoff.RemoveLibPath();
   if (!xcoff) {
     if (emsg) {
@@ -3082,55 +3179,60 @@ bool cmSystemTools::RemoveRPath(std::string const& file, std::string* emsg,
     *removed = rm;
   }
   return true;
+#endif
 }
-#else
-bool cmSystemTools::RemoveRPath(std::string const& /*file*/,
-                                std::string* /*emsg*/, bool* /*removed*/)
+bool cmSystemTools::RemoveRPath(std::string const& file, std::string* emsg,
+                                bool* removed)
 {
+  if (cm::optional<bool> result = RemoveRPathELF(file, emsg, removed)) {
+    return result.value();
+  }
+  if (cm::optional<bool> result = RemoveRPathXCOFF(file, emsg, removed)) {
+    return result.value();
+  }
   return false;
 }
-#endif
 
-// FIXME: Dispatch if multiple formats are supported.
 bool cmSystemTools::CheckRPath(std::string const& file,
                                std::string const& newRPath)
 {
-#if defined(CMake_USE_ELF_PARSER)
   // Parse the ELF binary.
   cmELF elf(file.c_str());
-
-  // Get the RPATH or RUNPATH entry from it.
-  cmELF::StringEntry const* se = elf.GetRPath();
-  if (!se) {
-    se = elf.GetRunPath();
-  }
-
-  // Make sure the current rpath contains the new rpath.
-  if (newRPath.empty()) {
+  if (elf) {
+    // Get the RPATH or RUNPATH entry from it.
+    cmELF::StringEntry const* se = elf.GetRPath();
     if (!se) {
-      return true;
+      se = elf.GetRunPath();
     }
-  } else {
-    if (se &&
-        cmSystemToolsFindRPath(se->Value, newRPath) != std::string::npos) {
-      return true;
+
+    // Make sure the current rpath contains the new rpath.
+    if (newRPath.empty()) {
+      if (!se) {
+        return true;
+      }
+    } else {
+      if (se &&
+          cmSystemToolsFindRPath(se->Value, newRPath) != std::string::npos) {
+        return true;
+      }
     }
+    return false;
   }
-  return false;
-#elif defined(CMake_USE_XCOFF_PARSER)
+#if defined(CMake_USE_XCOFF_PARSER)
   // Parse the XCOFF binary.
   cmXCOFF xcoff(file.c_str());
-  if (cm::optional<cm::string_view> libPath = xcoff.GetLibPath()) {
-    if (cmSystemToolsFindRPath(*libPath, newRPath) != std::string::npos) {
-      return true;
+  if (xcoff) {
+    if (cm::optional<cm::string_view> libPath = xcoff.GetLibPath()) {
+      if (cmSystemToolsFindRPath(*libPath, newRPath) != std::string::npos) {
+        return true;
+      }
     }
+    return false;
   }
-  return false;
-#else
+#endif
   (void)file;
   (void)newRPath;
   return false;
-#endif
 }
 
 bool cmSystemTools::RepeatedRemoveDirectory(const std::string& dir)

@@ -3,7 +3,8 @@ PROJECT_IS_TOP_LEVEL
 
 .. versionadded:: 3.21
 
-A boolean variable indicating whether :command:`project` was called in a top
+A boolean variable indicating whether the most recently called
+:command:`project` command in the current scope or above was in the top
 level ``CMakeLists.txt`` file.
 
 Some modules should only be included as part of the top level
@@ -19,3 +20,13 @@ options:
   if(PROJECT_IS_TOP_LEVEL)
     include(CTest)
   endif()
+
+The variable value will be true in:
+
+* the top-level directory of the project
+* the top-level directory of an external project added by :module:`ExternalProject`
+
+The variable value will be false in:
+
+* a directory added by :command:`add_subdirectory`
+* a directory added by :module:`FetchContent`

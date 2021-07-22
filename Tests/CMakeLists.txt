@@ -209,9 +209,12 @@ if(BUILD_TESTING)
     if(CMAKE_HOST_WIN32 AND COMMAND cmake_host_system_information)
       set(info_vs15 "VS_15_DIR")
       set(info_vs16 "VS_16_DIR")
+      set(info_vs17 "VS_17_DIR")
       set(vs_versions)
       if(WIN32)
-        if(NOT CMAKE_VERSION VERSION_LESS 3.14)
+        if(NOT CMAKE_VERSION VERSION_LESS 3.21.20210624)
+          set(vs_versions vs15 vs16 vs17)
+        elseif(NOT CMAKE_VERSION VERSION_LESS 3.14)
           set(vs_versions vs15 vs16)
         elseif(NOT CMAKE_VERSION VERSION_LESS 3.8)
           set(vs_versions vs15)
@@ -321,7 +324,7 @@ if(BUILD_TESTING)
     else()
       execute_process(
         COMMAND xcodebuild -version
-        OUTPUT_VARIABLE _version ERROR_VARIABLE _version
+        OUTPUT_VARIABLE _version ERROR_VARIABLE _version_err
         )
       if(_version MATCHES "^Xcode ([0-9]+(\\.[0-9]+)*)")
         set(CMake_TEST_XCODE_VERSION "${CMAKE_MATCH_1}")
@@ -478,6 +481,7 @@ if(BUILD_TESTING)
   ADD_TEST_MACRO(Preprocess Preprocess)
   set(ExportImport_BUILD_OPTIONS -DCMake_TEST_NESTED_MAKE_PROGRAM:FILEPATH=${CMake_TEST_EXPLICIT_MAKE_PROGRAM}
                                  -DCMake_TEST_CUDA:BOOL=${CMake_TEST_CUDA}
+                                 -DCMake_INSTALL_NAME_TOOL_BUG:BOOL=${CMake_INSTALL_NAME_TOOL_BUG}
                                  )
   ADD_TEST_MACRO(ExportImport ExportImport)
   set_property(TEST ExportImport APPEND
@@ -488,6 +492,11 @@ if(BUILD_TESTING)
   ADD_TEST_MACRO(CompileDefinitions CompileDefinitions)
   if(CMAKE_Fortran_COMPILER)
     set(CompileOptions_BUILD_OPTIONS -DTEST_FORTRAN=1)
+  endif()
+  if(_isMultiConfig)
+    set(CompileOptions_CTEST_OPTIONS --build-config $<CONFIGURATION>)
+  else()
+    set(CompileOptions_BUILD_OPTIONS -DCMAKE_BUILD_TYPE=$<CONFIGURATION>)
   endif()
   ADD_TEST_MACRO(CompileOptions CompileOptions)
   ADD_TEST_MACRO(CompatibleInterface CompatibleInterface)
@@ -532,7 +541,7 @@ if(BUILD_TESTING)
   if(CTEST_TEST_OSX_ARCH)
     ADD_TEST_MACRO(Architecture Architecture)
     set_tests_properties(Architecture PROPERTIES
-      PASS_REGULAR_EXPRESSION "(file is not of required architecture|does not match cputype|not the architecture being linked)")
+      PASS_REGULAR_EXPRESSION "(file is not of required architecture|does not match cputype|not the architecture being linked|but attempting to link with file built for)")
   endif()
 
   list(APPEND TEST_BUILD_DIRS ${CMake_TEST_INSTALL_PREFIX})
@@ -1433,6 +1442,7 @@ if(BUILD_TESTING)
             GIF
             Git
             GLEW
+            GLUT
             GnuTLS
             GSL
             GTK2
@@ -1477,6 +1487,10 @@ if(BUILD_TESTING)
   if(CMake_TEST_CUDA)
     add_subdirectory(Cuda)
     add_subdirectory(CudaOnly)
+  endif()
+
+  if(CMake_TEST_HIP)
+    add_subdirectory(HIP)
   endif()
 
   if(CMake_TEST_ISPC)
@@ -2448,6 +2462,9 @@ if(BUILD_TESTING)
   endif()
   if(vs16 AND CMake_TEST_ANDROID_VS16)
     add_test_VSAndroid(vs16 "Visual Studio 16 2019" "ARM")
+  endif()
+  if(vs17 AND CMake_TEST_ANDROID_VS17)
+    add_test_VSAndroid(vs17 "Visual Studio 17 2022" "ARM")
   endif()
 
   if (APPLE)
