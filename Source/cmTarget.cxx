@@ -407,6 +407,8 @@ TargetProperty const StaticTargetProperties[] = {
   { "VS_USE_DEBUG_LIBRARIES"_s, IC::NonImportedTarget },
   // ---- OpenWatcom
   { "WATCOM_RUNTIME_LIBRARY"_s, IC::CanCompileSources },
+  // ---- AIX
+  { "AIX_SHARED_LIBRARY_ARCHIVE"_s, IC::SharedLibraryTarget },
   // -- Language
   // ---- C
   COMMON_LANGUAGE_PROPERTIES(C),
@@ -657,6 +659,7 @@ public:
   bool PerConfig;
   cmTarget::Visibility TargetVisibility;
   std::set<BT<std::pair<std::string, bool>>> Utilities;
+  std::set<std::string> CodegenDependencies;
   std::vector<cmCustomCommand> PreBuildCommands;
   std::vector<cmCustomCommand> PreLinkCommands;
   std::vector<cmCustomCommand> PostBuildCommands;
@@ -1238,6 +1241,16 @@ void cmTarget::AddUtility(BT<std::pair<std::string, bool>> util)
   this->impl->Utilities.emplace(std::move(util));
 }
 
+void cmTarget::AddCodegenDependency(std::string const& name)
+{
+  this->impl->CodegenDependencies.emplace(name);
+}
+
+std::set<std::string> const& cmTarget::GetCodegenDeps() const
+{
+  return this->impl->CodegenDependencies;
+}
+
 std::set<BT<std::pair<std::string, bool>>> const& cmTarget::GetUtilities()
   const
 {
@@ -1271,6 +1284,12 @@ bool cmTarget::IsFrameworkOnApple() const
   return ((this->GetType() == cmStateEnums::SHARED_LIBRARY ||
            this->GetType() == cmStateEnums::STATIC_LIBRARY) &&
           this->IsApple() && this->GetPropertyAsBool("FRAMEWORK"));
+}
+
+bool cmTarget::IsArchivedAIXSharedLibrary() const
+{
+  return (this->GetType() == cmStateEnums::SHARED_LIBRARY && this->IsAIX() &&
+          this->GetPropertyAsBool("AIX_SHARED_LIBRARY_ARCHIVE"));
 }
 
 bool cmTarget::IsAppBundleOnApple() const
@@ -2986,7 +3005,9 @@ const char* cmTarget::GetSuffixVariableInternal(
     case cmStateEnums::SHARED_LIBRARY:
       switch (artifact) {
         case cmStateEnums::RuntimeBinaryArtifact:
-          return "CMAKE_SHARED_LIBRARY_SUFFIX";
+          return this->IsArchivedAIXSharedLibrary()
+            ? "CMAKE_SHARED_LIBRARY_ARCHIVE_SUFFIX"
+            : "CMAKE_SHARED_LIBRARY_SUFFIX";
         case cmStateEnums::ImportLibraryArtifact:
           return this->IsApple() ? "CMAKE_APPLE_IMPORT_FILE_SUFFIX"
                                  : "CMAKE_IMPORT_LIBRARY_SUFFIX";
