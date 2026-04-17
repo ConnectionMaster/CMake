@@ -15,9 +15,9 @@ Synopsis
   cmake_language(`DEFER`_ <options>... CALL <command> [<arg>...])
   cmake_language(`SET_DEPENDENCY_PROVIDER`_ <command> SUPPORTED_METHODS <methods>...)
   cmake_language(`GET_MESSAGE_LOG_LEVEL`_ <out-var>)
-  cmake_language(`PRINT_TARGETS`_ <filter>...)
   cmake_language(`EXIT`_ <exit-code>)
   cmake_language(`TRACE`_ <boolean> ...)
+  cmake_language(`PRINT_TARGETS`_ <filter>...)
 
 Introduction
 ^^^^^^^^^^^^
@@ -512,6 +512,53 @@ Getting current message log level
   option takes precedence. If neither are set, the default logging level
   is returned.
 
+Terminating Scripts
+^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 3.29
+
+.. signature::
+  cmake_language(EXIT <exit-code>)
+
+  Terminate the current :option:`cmake -P` script and exit with ``<exit-code>``.
+
+  This command works only in :ref:`script mode <Script Processing Mode>`.
+  If used outside of that context, it will cause a fatal error.
+
+  The ``<exit-code>`` should be non-negative.
+  If ``<exit-code>`` is negative, then the behavior
+  is unspecified (e.g., on Windows the error code -1
+  becomes ``0xffffffff``, and on Linux it becomes 255).
+  Exit codes above 255 may not be supported by the underlying
+  shell or platform, and some shells may interpret values
+  above 125 specially.  Therefore, it is advisable to only
+  specify an ``<exit-code>`` in the range 0 to 125.
+
+Trace Control
+^^^^^^^^^^^^^
+
+.. versionadded:: 4.2
+
+.. signature::
+  cmake_language(TRACE ON [EXPAND])
+  cmake_language(TRACE OFF)
+  :target:
+    TRACE
+    TRACE-OFF
+
+  The TRACE subcommand controls runtime tracing of executed CMake commands and
+  macros within the current process. When enabled, trace output is written
+  in the same format as if CMake had been started with the
+  :option:`cmake --trace` or :option:`cmake --trace-expand` command line options.
+
+  Tracing scopes are nestable. Multiple ``TRACE ON`` calls may be active at the
+  same time, and each ``TRACE OFF`` deactivates one nesting level.
+
+  If CMake is run with :option:`cmake --trace` or :option:`cmake --trace-expand`,
+  those options override and force tracing globally, regardless of
+  ``cmake_language(TRACE OFF)`` calls. In such cases, the command may still
+  be invoked but has no effect on the trace state.
+
 Printing Targets
 ^^^^^^^^^^^^^^^^
 
@@ -563,50 +610,3 @@ Gives::
    Non-imported targets matching REGEX '^(app|util)$' (case sensitive):
      app (EXECUTABLE)
      util (STATIC_LIBRARY)
-
-Terminating Scripts
-^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 3.29
-
-.. signature::
-  cmake_language(EXIT <exit-code>)
-
-  Terminate the current :option:`cmake -P` script and exit with ``<exit-code>``.
-
-  This command works only in :ref:`script mode <Script Processing Mode>`.
-  If used outside of that context, it will cause a fatal error.
-
-  The ``<exit-code>`` should be non-negative.
-  If ``<exit-code>`` is negative, then the behavior
-  is unspecified (e.g., on Windows the error code -1
-  becomes ``0xffffffff``, and on Linux it becomes 255).
-  Exit codes above 255 may not be supported by the underlying
-  shell or platform, and some shells may interpret values
-  above 125 specially.  Therefore, it is advisable to only
-  specify an ``<exit-code>`` in the range 0 to 125.
-
-Trace Control
-^^^^^^^^^^^^^
-
-.. versionadded:: 4.2
-
-.. signature::
-  cmake_language(TRACE ON [EXPAND])
-  cmake_language(TRACE OFF)
-  :target:
-    TRACE
-    TRACE-OFF
-
-  The TRACE subcommand controls runtime tracing of executed CMake commands and
-  macros within the current process. When enabled, trace output is written
-  in the same format as if CMake had been started with the
-  :option:`cmake --trace` or :option:`cmake --trace-expand` command line options.
-
-  Tracing scopes are nestable. Multiple ``TRACE ON`` calls may be active at the
-  same time, and each ``TRACE OFF`` deactivates one nesting level.
-
-  If CMake is run with :option:`cmake --trace` or :option:`cmake --trace-expand`,
-  those options override and force tracing globally, regardless of
-  ``cmake_language(TRACE OFF)`` calls. In such cases, the command may still
-  be invoked but has no effect on the trace state.
