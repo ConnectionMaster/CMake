@@ -321,12 +321,10 @@ regular :command:`if(TARGET)` subcommand.  An ``ALIAS`` target may not be
 installed or exported.
 
 .. versionchanged:: 4.5
-  The ``<name>`` may be used as the operand of :command:`set_property` and
-  :command:`set_target_properties` to modify properties of ``<target>``.  It
-  may not be used with the commands :command:`target_link_libraries`,
-  :command:`target_compile_definitions` etc.  CMake 4.4 and earlier did not
-  allow the ``<name>`` to modify properties of ``<target>`` with
-  :command:`set_property` and :command:`set_target_properties`.
+  The ``<name>`` may be used as the operand of :command:`set_property`,
+  :command:`set_target_properties`, :command:`target_link_libraries`, etc. to
+  modify properties of ``<target>``.  CMake 4.4 and earlier did not allow the
+  ``<name>`` to modify properties of ``<target>``.
 
 See Also
 ^^^^^^^^

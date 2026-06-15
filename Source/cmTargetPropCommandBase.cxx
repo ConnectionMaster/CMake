@@ -29,10 +29,6 @@ bool cmTargetPropCommandBase::HandleArguments(
     return false;
   }
 
-  if (this->Makefile->IsAlias(args[0])) {
-    this->SetError("can not be used on an ALIAS target.");
-    return false;
-  }
   // Lookup the target for which property-values are specified.
   this->Target = this->Makefile->GetGlobalGenerator()->FindTarget(args[0]);
   if (!this->Target) {
