@@ -15,6 +15,7 @@ Synopsis
   cmake_language(`DEFER`_ <options>... CALL <command> [<arg>...])
   cmake_language(`SET_DEPENDENCY_PROVIDER`_ <command> SUPPORTED_METHODS <methods>...)
   cmake_language(`GET_MESSAGE_LOG_LEVEL`_ <out-var>)
+  cmake_language(`PRINT_TARGETS`_ <filter>...)
   cmake_language(`EXIT`_ <exit-code>)
   cmake_language(`TRACE`_ <boolean> ...)
 
@@ -510,6 +511,58 @@ Getting current message log level
   If both the command line option and the variable are set, the command line
   option takes precedence. If neither are set, the default logging level
   is returned.
+
+Printing Targets
+^^^^^^^^^^^^^^^^
+
+.. versionadded:: 4.5
+
+  .. signature::
+    cmake_language(PRINT_TARGETS <filter>...)
+
+  Prints the names of all targets that currently exist, one per line,
+  annotated with their types (e.g. ``EXECUTABLE``, ``STATIC_LIBRARY``,
+  ``INTERFACE_LIBRARY``, ``UTILITY``).  Imported targets are additionally
+  annotated with ``IMPORTED``.  :ref:`Alias Targets` are not listed; their
+  aliased target is.
+
+  The output is sorted by target name and printed as a single status message.
+  Each ``<filter>`` may be one of:
+
+  ``REGEX <regex>``
+    Only list targets whose name matches the given
+    :ref:`regular expression <Regex Specification>`.  If no target matches,
+    a warning is issued.
+
+  ``IGNORE_CASE``
+    Match the ``REGEX`` case-insensitively.  Only valid with ``REGEX``.
+
+  ``IMPORTED_ONLY``
+    Only list :ref:`Imported Targets`.
+
+  ``NO_IMPORTED``
+    Exclude imported targets; only list targets built by this project.
+
+  ``IMPORTED_ONLY`` and ``NO_IMPORTED`` are mutually exclusive.  When neither
+  is given, both imported and non-imported targets are listed.
+
+Printing Targets Examples
+"""""""""""""""""""""""""
+
+.. code-block:: cmake
+
+  add_executable(app main.c)
+  add_library(util STATIC util.c)
+  find_package(Threads REQUIRED)  # provides imported Threads::Threads
+
+  cmake_language(PRINT_TARGETS REGEX "^(app|util)$" NO_IMPORTED)
+
+Gives::
+
+  -- Printing targets...
+   Non-imported targets matching REGEX '^(app|util)$' (case sensitive):
+     app (EXECUTABLE)
+     util (STATIC_LIBRARY)
 
 Terminating Scripts
 ^^^^^^^^^^^^^^^^^^^
