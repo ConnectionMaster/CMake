@@ -31,6 +31,13 @@ Json::Value GetJson(ResultSeverityLevel level)
   }
 }
 
+Json::Value GetJson(Message const& message)
+{
+  Json::Value obj(Json::objectValue);
+  obj["text"] = message.Text;
+  return obj;
+}
+
 Json::Value GetJson(ArtifactLocation const& artifactLocation)
 {
   Json::Value obj(Json::objectValue);
@@ -58,11 +65,52 @@ Json::Value GetJson(PhysicalLocation const& physicalLocation)
   return obj;
 }
 
+Json::Value GetJson(LogicalLocation const& logicalLocation)
+{
+  Json::Value obj(Json::objectValue);
+  obj["name"] = logicalLocation.Name;
+  if (!logicalLocation.Kind.empty()) {
+    obj["kind"] = std::string(logicalLocation.Kind);
+  }
+  return obj;
+}
+
 Json::Value GetJson(Location const& location)
 {
   Json::Value obj(Json::objectValue);
   obj["physicalLocation"] = cmSarif::GetJson(location.Physical);
+  if (!location.Logical.empty()) {
+    Json::Value logical(Json::arrayValue);
+    for (auto const& loc : location.Logical) {
+      logical.append(cmSarif::GetJson(loc));
+    }
+    obj["logicalLocations"] = logical;
+  }
+  if (location.Message) {
+    obj["message"] = cmSarif::GetJson(*location.Message);
+  }
+
   return obj;
+}
+
+Json::Value GetJson(StackFrame const& frame)
+{
+  Json::Value frameJson(Json::objectValue);
+  if (frame.Location) {
+    frameJson["location"] = cmSarif::GetJson(*frame.Location);
+  }
+  return frameJson;
+}
+
+Json::Value GetJson(Stack const& stack)
+{
+  Json::Value stackJson(Json::objectValue);
+  Json::Value frames(Json::arrayValue);
+  for (auto const& frame : stack.Frames) {
+    frames.append(cmSarif::GetJson(frame));
+  }
+  stackJson["frames"] = frames;
+  return stackJson;
 }
 
 Json::Value GetJson(ReportingDescriptor const& reportingDescriptor)
@@ -80,7 +128,7 @@ Json::Value GetJson(Result const& result)
   Json::Value resultJson(Json::objectValue);
 
   if (result.Message) {
-    resultJson["message"]["text"] = *result.Message;
+    resultJson["message"] = cmSarif::GetJson(*result.Message);
   }
 
   if (result.Level) {
@@ -96,6 +144,14 @@ Json::Value GetJson(Result const& result)
 
   if (result.Location) {
     resultJson["locations"][0] = cmSarif::GetJson(*result.Location);
+  }
+
+  if (!result.Stacks.empty()) {
+    Json::Value stacks(Json::arrayValue);
+    for (auto const& stack : result.Stacks) {
+      stacks.append(cmSarif::GetJson(stack));
+    }
+    resultJson["stacks"] = stacks;
   }
 
   return resultJson;
