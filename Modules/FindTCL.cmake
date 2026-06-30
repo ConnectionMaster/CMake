@@ -116,6 +116,10 @@ set(TCLTK_POSSIBLE_LIB_PATHS
 )
 
 set(TCLTK_POSSIBLE_LIB_PATH_SUFFIXES
+  lib/tcl/tcl9.1
+  lib/tcl/tk9.1
+  lib/tcl/tcl9.0
+  lib/tcl/tk9.0
   lib/tcl/tcl8.6
   lib/tcl/tk8.6
   lib/tcl/tcl8.5
@@ -141,6 +145,8 @@ find_library(TCL_LIBRARY
   NAMES
   tcl
   tcl${TCL_LIBRARY_VERSION} tcl${TCL_TCLSH_VERSION} tcl${TK_WISH_VERSION}
+  tcl91 tcl9.1 tcl91t tcl9.1t
+  tcl90 tcl9.0 tcl90t tcl9.0t
   tcl86 tcl8.6 tcl86t tcl8.6t
   tcl85 tcl8.5
   tcl84 tcl8.4
@@ -155,6 +161,8 @@ find_library(TK_LIBRARY
   NAMES
   tk
   tk${TK_LIBRARY_VERSION} tk${TCL_TCLSH_VERSION} tk${TK_WISH_VERSION}
+  tk91 tk9.1 tk91t tk9.1t
+  tk90 tk9.0 tk90t tk9.0t
   tk86 tk8.6 tk86t tk8.6t
   tk85 tk8.5
   tk84 tk8.4
@@ -201,6 +209,10 @@ set(TCLTK_POSSIBLE_INCLUDE_PATHS
 set(TCLTK_POSSIBLE_INCLUDE_PATH_SUFFIXES
   include/tcl${TK_LIBRARY_VERSION}
   include/tcl${TCL_LIBRARY_VERSION}
+  include/tcl9.1
+  include/tk9.1
+  include/tcl9.0
+  include/tk9.0
   include/tcl8.6
   include/tk8.6
   include/tcl8.5

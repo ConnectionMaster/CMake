@@ -90,6 +90,8 @@ endif()
 set(TK_WISH_NAMES
   wish
   wish${TCL_LIBRARY_VERSION} wish${TK_LIBRARY_VERSION} wish${TCL_TCLSH_VERSION}
+  wish91 wish9.1
+  wish90 wish9.0
   wish86 wish8.6
   wish85 wish8.5
   wish84 wish8.4
