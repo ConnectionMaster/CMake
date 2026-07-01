@@ -2079,7 +2079,7 @@ bool cmFindPackageCommand::ReadListFile(std::string const& f,
     ps = cm::PolicyScope::None;
   }
 
-  using ITScope = cmMakefile::ImportedTargetScope;
+  using ITScope = cm::ImportedTargetScope;
   ITScope scope = this->GlobalScope ? ITScope::Global : ITScope::Local;
   cmMakefile::SetGlobalTargetImportScope globScope(this->Makefile, scope);
 
@@ -2242,7 +2242,10 @@ bool cmFindPackageCommand::ImportPackageTargets(cmPackageState& packageState,
   }
 
   // Import base file.
-  if (!reader.ImportTargets(this->Makefile, this->Status, this->GlobalScope)) {
+  if (!reader.ImportTargets(this->Makefile, this->Status,
+                            this->GlobalScope
+                              ? cm::ImportedTargetScope::Global
+                              : cm::ImportedTargetScope::Local)) {
     return false;
   }
 

@@ -855,10 +855,11 @@ void cmPackageInfoReader::ReadCxxModulesMetadata(
 
 cmTarget* cmPackageInfoReader::AddLibraryComponent(
   cmMakefile* makefile, cm::TargetType type, std::string const& name,
-  Json::Value const& data, std::string const& package, bool global) const
+  Json::Value const& data, std::string const& package,
+  cm::ImportedTargetScope scope) const
 {
   // Create the imported target.
-  cmTarget* const target = makefile->AddImportedTarget(name, type, global);
+  cmTarget* const target = makefile->AddImportedTarget(name, type, scope);
   target->SetOrigin(cmTarget::Origin::Cps);
 
   // Set target properties.
@@ -872,7 +873,8 @@ cmTarget* cmPackageInfoReader::AddLibraryComponent(
 }
 
 bool cmPackageInfoReader::ImportTargets(cmMakefile* makefile,
-                                        cmExecutionStatus& status, bool global)
+                                        cmExecutionStatus& status,
+                                        cm::ImportedTargetScope scope)
 {
   std::string const& package = this->GetName();
 
@@ -896,7 +898,7 @@ bool cmPackageInfoReader::ImportTargets(cmMakefile* makefile,
 
     auto createTarget = [&](cm::TargetType typeEnum) {
       return this->AddLibraryComponent(makefile, typeEnum, fullName, *ci,
-                                       package, global);
+                                       package, scope);
     };
 
     cmTarget* target = nullptr;
@@ -934,7 +936,7 @@ bool cmPackageInfoReader::ImportTargets(cmMakefile* makefile,
     }
 
     cmTarget* const target = makefile->AddImportedTarget(
-      package, cm::TargetType::INTERFACE_LIBRARY, global);
+      package, cm::TargetType::INTERFACE_LIBRARY, scope);
     for (std::string const& name : defaultComponents) {
       std::string const& fullName = cmStrCat(package, "::"_s, name);
       AppendProperty(makefile, target, "LINK_LIBRARIES"_s, {}, fullName);

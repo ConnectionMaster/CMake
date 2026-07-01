@@ -658,7 +658,7 @@ bool cmMakefile::ExecuteCommand(cmListFileFunction const& lff,
 
 bool cmMakefile::IsImportedTargetGlobalScope() const
 {
-  return this->CurrentImportedTargetScope == ImportedTargetScope::Global;
+  return this->CurrentImportedTargetScope == cm::ImportedTargetScope::Global;
 }
 
 class cmMakefile::IncludeScope : public FileScopeBase
@@ -3986,13 +3986,12 @@ void cmMakefile::RaiseScope(std::vector<std::string> const& variables)
 }
 
 cmTarget* cmMakefile::AddImportedTarget(std::string const& name,
-                                        cm::TargetType type, bool global)
+                                        cm::TargetType type,
+                                        cm::ImportedTargetScope scope)
 {
   // Create the target.
   auto target =
-    cm::make_unique<cmTarget>(name, type,
-                              global ? cmTarget::Visibility::ImportedGlobally
-                                     : cmTarget::Visibility::Imported,
+    cm::make_unique<cmTarget>(name, type, cmTarget::ImportedVisibility(scope),
                               this, cmTarget::PerConfig::Yes);
 
   // Add to the set of available imported targets.

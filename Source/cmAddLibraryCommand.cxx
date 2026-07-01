@@ -287,7 +287,10 @@ bool cmAddLibraryCommand(std::vector<std::string> const& args,
     }
 
     // Create the imported target.
-    cmTarget* target = mf.AddImportedTarget(libName, type, importGlobal);
+    cmTarget* target =
+      mf.AddImportedTarget(libName, type,
+                           importGlobal ? cm::ImportedTargetScope::Global
+                                        : cm::ImportedTargetScope::Local);
     target->SetSymbolic(symbolicTarget);
     return true;
   }

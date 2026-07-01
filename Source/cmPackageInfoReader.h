@@ -19,6 +19,7 @@ class cmMakefile;
 class cmTarget;
 
 namespace cm {
+enum class ImportedTargetScope;
 enum class TargetType;
 } // namespace cm
 
@@ -80,7 +81,7 @@ public:
 
   /// Create targets for components specified in the CPS file.
   bool ImportTargets(cmMakefile* makefile, cmExecutionStatus& status,
-                     bool global);
+                     cm::ImportedTargetScope scope);
 
   /// Add configuration-specific properties for targets.
   bool ImportTargetConfigurations(cmMakefile* makefile,
@@ -92,7 +93,8 @@ private:
   cmTarget* AddLibraryComponent(cmMakefile* makefile, cm::TargetType type,
                                 std::string const& name,
                                 Json::Value const& data,
-                                std::string const& package, bool global) const;
+                                std::string const& package,
+                                cm::ImportedTargetScope scope) const;
 
   void AddTargetConfiguration(cmTarget* target,
                               cm::string_view configuration) const;

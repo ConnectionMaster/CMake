@@ -140,7 +140,9 @@ bool cmAddExecutableCommand(std::vector<std::string> const& args,
     }
 
     // Create the imported target.
-    mf.AddImportedTarget(exename, cm::TargetType::EXECUTABLE, importGlobal);
+    mf.AddImportedTarget(exename, cm::TargetType::EXECUTABLE,
+                         importGlobal ? cm::ImportedTargetScope::Global
+                                      : cm::ImportedTargetScope::Local);
     return true;
   }
 

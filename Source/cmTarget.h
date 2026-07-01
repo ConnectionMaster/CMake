@@ -71,6 +71,13 @@ public:
     No
   };
 
+  static Visibility ImportedVisibility(cm::ImportedTargetScope scope)
+  {
+    return (scope == cm::ImportedTargetScope::Global
+              ? Visibility::ImportedGlobally
+              : Visibility::Imported);
+  }
+
   cmTarget(std::string name, cm::TargetType type, Visibility vis,
            cmMakefile* mf, PerConfig perConfig);
 

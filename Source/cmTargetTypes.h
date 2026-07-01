@@ -40,4 +40,10 @@ using TargetDomainSet = cm::enum_set<TargetDomain>;
 static TargetDomainSet const AllTargetDomains{ TargetDomain::NATIVE,
                                                TargetDomain::ALIAS,
                                                TargetDomain::FOREIGN };
+
+enum class ImportedTargetScope
+{
+  Local,
+  Global,
+};
 };

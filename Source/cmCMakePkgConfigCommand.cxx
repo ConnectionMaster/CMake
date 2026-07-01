@@ -1033,7 +1033,8 @@ bool HandleImportCommand(std::vector<std::string> const& args,
 
   mf.AddDefinition(found_var, "TRUE");
   auto* tgt =
-    mf.AddImportedTarget(local_name, cm::TargetType::INTERFACE_LIBRARY, false);
+    mf.AddImportedTarget(local_name, cm::TargetType::INTERFACE_LIBRARY,
+                         cm::ImportedTargetScope::Local);
   tgt->AppendProperty("INTERFACE_LINK_LIBRARIES", foreign_name);
   return true;
 }

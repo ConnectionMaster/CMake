@@ -272,7 +272,7 @@ public:
 
   /** Create a new imported target with the name and type given.  */
   cmTarget* AddImportedTarget(std::string const& name, cm::TargetType type,
-                              bool global);
+                              cm::ImportedTargetScope scope);
 
   cmTarget* AddForeignTarget(std::string const& origin,
                              std::string const& name);
@@ -979,22 +979,17 @@ public:
 
   bool IsImportedTargetGlobalScope() const;
 
-  enum class ImportedTargetScope
-  {
-    Local,
-    Global,
-  };
-
   /** Helper class to manage whether imported packages
    * should be globally scoped based off the find package command
    */
   class SetGlobalTargetImportScope
   {
   public:
-    SetGlobalTargetImportScope(cmMakefile* mk, ImportedTargetScope const scope)
+    SetGlobalTargetImportScope(cmMakefile* mk,
+                               cm::ImportedTargetScope const scope)
       : Makefile(mk)
     {
-      if (scope == ImportedTargetScope::Global &&
+      if (scope == cm::ImportedTargetScope::Global &&
           !this->Makefile->IsImportedTargetGlobalScope()) {
         this->Makefile->CurrentImportedTargetScope = scope;
         this->Set = true;
@@ -1006,7 +1001,7 @@ public:
     {
       if (this->Set) {
         this->Makefile->CurrentImportedTargetScope =
-          ImportedTargetScope::Local;
+          cm::ImportedTargetScope::Local;
       }
     }
 
@@ -1371,5 +1366,6 @@ private:
   std::set<std::string> WarnedCMP0144;
   std::set<std::string> WarnedCMP0219;
   bool IsSourceFileTryCompile;
-  ImportedTargetScope CurrentImportedTargetScope = ImportedTargetScope::Local;
+  cm::ImportedTargetScope CurrentImportedTargetScope =
+    cm::ImportedTargetScope::Local;
 };
