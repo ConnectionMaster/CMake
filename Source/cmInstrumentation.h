@@ -24,9 +24,12 @@
 
 #include "cmFileLock.h"
 #include "cmInstrumentationQuery.h"
-#include "cmStateTypes.h"
 
 class cmGlobalGenerator;
+
+namespace cm {
+enum class TargetType;
+} // namespace cm
 
 class cmInstrumentation
 {
@@ -123,7 +126,7 @@ private:
   static std::string ComputeSuffixHash(std::string const& command_str);
   static std::string ComputeSuffixTime(
     cm::optional<std::chrono::system_clock::time_point> time = cm::nullopt);
-  static bool IsInstrumentableTargetType(cmStateEnums::TargetType type);
+  static bool IsInstrumentableTargetType(cm::TargetType type);
   void PrepareDataForCDash(std::string const& data_dir,
                            std::string const& index_path);
   static std::string GetCompileTraceFile(

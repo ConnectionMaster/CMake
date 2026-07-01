@@ -40,6 +40,7 @@
 #include "cmState.h"
 #include "cmStringAlgorithms.h"
 #include "cmSystemTools.h"
+#include "cmTargetTypes.h"
 #include "cmTimestamp.h"
 #include "cmUVProcessChain.h"
 #include "cmValue.h"
@@ -897,14 +898,13 @@ std::string cmInstrumentation::ComputeSuffixTime(
   return ss.str();
 }
 
-bool cmInstrumentation::IsInstrumentableTargetType(
-  cmStateEnums::TargetType type)
+bool cmInstrumentation::IsInstrumentableTargetType(cm::TargetType type)
 {
-  return type == cmStateEnums::TargetType::EXECUTABLE ||
-    type == cmStateEnums::TargetType::SHARED_LIBRARY ||
-    type == cmStateEnums::TargetType::STATIC_LIBRARY ||
-    type == cmStateEnums::TargetType::MODULE_LIBRARY ||
-    type == cmStateEnums::TargetType::OBJECT_LIBRARY;
+  return type == cm::TargetType::EXECUTABLE ||
+    type == cm::TargetType::SHARED_LIBRARY ||
+    type == cm::TargetType::STATIC_LIBRARY ||
+    type == cm::TargetType::MODULE_LIBRARY ||
+    type == cm::TargetType::OBJECT_LIBRARY;
 }
 
 /*

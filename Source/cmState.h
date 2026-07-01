@@ -39,6 +39,10 @@ struct cmListFileArgument;
 template <typename T>
 class BT;
 
+namespace cm {
+enum class TargetType;
+} // namespace cm
+
 class cmState
 {
   friend class cmStateSnapshot;
@@ -67,8 +71,7 @@ public:
   cmState(cmState const&) = delete;
   cmState& operator=(cmState const&) = delete;
 
-  static std::string const& GetTargetTypeName(
-    cmStateEnums::TargetType targetType);
+  static std::string const& GetTargetTypeName(cm::TargetType targetType);
 
   cmStateSnapshot CreateBaseSnapshot();
   cmStateSnapshot CreateBuildsystemDirectorySnapshot(

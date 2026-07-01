@@ -522,13 +522,14 @@ add_library(
   cmSystemTools.h
   cmTarget.cxx
   cmTarget.h
+  cmTargetExport.h
   cmTargetPropertyComputer.cxx
   cmTargetPropertyComputer.h
   cmTargetPropertyEntry.cxx
   cmTargetPropertyEntry.h
-  cmTargetExport.h
   cmTargetTraceDependencies.cxx
   cmTargetTraceDependencies.h
+  cmTargetTypes.h
   cmTest.cxx
   cmTest.h
   cmTestGenerator.cxx

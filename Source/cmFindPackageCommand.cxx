@@ -42,6 +42,7 @@
 #include "cmStateTypes.h"
 #include "cmStringAlgorithms.h"
 #include "cmSystemTools.h"
+#include "cmTargetTypes.h"
 #include "cmValue.h"
 #include "cmVersionMacros.h"
 #include "cmWindowsRegistry.h"

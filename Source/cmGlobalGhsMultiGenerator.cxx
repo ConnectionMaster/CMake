@@ -31,6 +31,7 @@
 #include "cmStringAlgorithms.h"
 #include "cmSystemTools.h"
 #include "cmTarget.h"
+#include "cmTargetTypes.h"
 #include "cmValue.h"
 #include "cmVersion.h"
 #include "cmake.h"
@@ -330,10 +331,10 @@ void cmGlobalGhsMultiGenerator::WriteSubProjects(std::ostream& fout,
 
   // All known targets
   for (cmGeneratorTarget const* target : this->ProjectTargets) {
-    if (target->GetType() == cmStateEnums::INTERFACE_LIBRARY ||
-        target->GetType() == cmStateEnums::MODULE_LIBRARY ||
-        target->GetType() == cmStateEnums::SHARED_LIBRARY ||
-        (target->GetType() == cmStateEnums::GLOBAL_TARGET &&
+    if (target->GetType() == cm::TargetType::INTERFACE_LIBRARY ||
+        target->GetType() == cm::TargetType::MODULE_LIBRARY ||
+        target->GetType() == cm::TargetType::SHARED_LIBRARY ||
+        (target->GetType() == cm::TargetType::GLOBAL_TARGET &&
          target->GetName() != this->GetInstallTargetName())) {
       continue;
     }
@@ -370,10 +371,10 @@ void cmGlobalGhsMultiGenerator::WriteTargets(cmLocalGenerator* root)
 
   // All known targets
   for (cmGeneratorTarget const* target : this->ProjectTargets) {
-    if (target->GetType() == cmStateEnums::INTERFACE_LIBRARY ||
-        target->GetType() == cmStateEnums::MODULE_LIBRARY ||
-        target->GetType() == cmStateEnums::SHARED_LIBRARY ||
-        (target->GetType() == cmStateEnums::GLOBAL_TARGET &&
+    if (target->GetType() == cm::TargetType::INTERFACE_LIBRARY ||
+        target->GetType() == cm::TargetType::MODULE_LIBRARY ||
+        target->GetType() == cm::TargetType::SHARED_LIBRARY ||
+        (target->GetType() == cm::TargetType::GLOBAL_TARGET &&
          target->GetName() != this->GetInstallTargetName())) {
       continue;
     }
@@ -765,7 +766,7 @@ void cmGlobalGhsMultiGenerator::AddAllTarget()
       for (cmLocalGenerator const* i : gen) {
         for (auto const& tgt : i->GetGeneratorTargets()) {
           // Skip global or imported targets
-          if (tgt->GetType() == cmStateEnums::GLOBAL_TARGET ||
+          if (tgt->GetType() == cm::TargetType::GLOBAL_TARGET ||
               tgt->IsImported()) {
             continue;
           }

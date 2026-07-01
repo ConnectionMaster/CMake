@@ -27,6 +27,7 @@
 #include "cmStringAlgorithms.h"
 #include "cmSystemTools.h"
 #include "cmTarget.h"
+#include "cmTargetTypes.h"
 #include "cmValue.h"
 
 namespace {
@@ -853,7 +854,7 @@ void cmPackageInfoReader::ReadCxxModulesMetadata(
 }
 
 cmTarget* cmPackageInfoReader::AddLibraryComponent(
-  cmMakefile* makefile, cmStateEnums::TargetType type, std::string const& name,
+  cmMakefile* makefile, cm::TargetType type, std::string const& name,
   Json::Value const& data, std::string const& package, bool global) const
 {
   // Create the imported target.
@@ -893,23 +894,23 @@ bool cmPackageInfoReader::ImportTargets(cmMakefile* makefile,
       }
     }
 
-    auto createTarget = [&](cmStateEnums::TargetType typeEnum) {
+    auto createTarget = [&](cm::TargetType typeEnum) {
       return this->AddLibraryComponent(makefile, typeEnum, fullName, *ci,
                                        package, global);
     };
 
     cmTarget* target = nullptr;
     if (type == "symbolic"_s) {
-      target = createTarget(cmStateEnums::INTERFACE_LIBRARY);
+      target = createTarget(cm::TargetType::INTERFACE_LIBRARY);
       target->SetSymbolic(true);
     } else if (type == "dylib"_s) {
-      target = createTarget(cmStateEnums::SHARED_LIBRARY);
+      target = createTarget(cm::TargetType::SHARED_LIBRARY);
     } else if (type == "module"_s) {
-      target = createTarget(cmStateEnums::MODULE_LIBRARY);
+      target = createTarget(cm::TargetType::MODULE_LIBRARY);
     } else if (type == "archive"_s) {
-      target = createTarget(cmStateEnums::STATIC_LIBRARY);
+      target = createTarget(cm::TargetType::STATIC_LIBRARY);
     } else if (type == "interface"_s) {
-      target = createTarget(cmStateEnums::INTERFACE_LIBRARY);
+      target = createTarget(cm::TargetType::INTERFACE_LIBRARY);
     } else {
       makefile->IssueMessage(MessageType::WARNING,
                              cmStrCat(R"(component ")"_s, fullName,
@@ -933,7 +934,7 @@ bool cmPackageInfoReader::ImportTargets(cmMakefile* makefile,
     }
 
     cmTarget* const target = makefile->AddImportedTarget(
-      package, cmStateEnums::INTERFACE_LIBRARY, global);
+      package, cm::TargetType::INTERFACE_LIBRARY, global);
     for (std::string const& name : defaultComponents) {
       std::string const& fullName = cmStrCat(package, "::"_s, name);
       AppendProperty(makefile, target, "LINK_LIBRARIES"_s, {}, fullName);

@@ -21,11 +21,11 @@
 #include "cmMessageType.h"
 #include "cmOutputConverter.h"
 #include "cmState.h"
-#include "cmStateTypes.h"
 #include "cmStringAlgorithms.h"
 #include "cmSystemTools.h"
 #include "cmTarget.h"
 #include "cmTargetDepend.h"
+#include "cmTargetTypes.h"
 #include "cmTest.h"
 #include "cmTestGenerator.h"
 #include "cmValue.h"
@@ -366,7 +366,7 @@ void cmGlobalUnixMakefileGenerator3::WriteMainCMakefileLanguageRules(
     // for all of out targets
     for (auto const& tgt : lg.GetGeneratorTargets()) {
       if (tgt->IsInBuildSystem() &&
-          tgt->GetType() != cmStateEnums::GLOBAL_TARGET) {
+          tgt->GetType() != cm::TargetType::GLOBAL_TARGET) {
         std::string tname = cmStrCat(lg.GetRelativeTargetDirectory(tgt.get()),
                                      "/DependInfo.cmake");
         cmSystemTools::ConvertToUnixSlashes(tname);
@@ -611,7 +611,7 @@ void cmGlobalUnixMakefileGenerator3::WriteConvenienceRules(
           // Handle user targets here.  Global targets are handled in
           // the local generator on a per-directory basis.
           (gtarget->IsInBuildSystem() &&
-           gtarget->GetType() != cmStateEnums::GLOBAL_TARGET)) {
+           gtarget->GetType() != cm::TargetType::GLOBAL_TARGET)) {
         // Add a rule to build the target by name.
         lg.WriteDivider(ruleFileStream);
         ruleFileStream << "# Target rules for targets named " << name
@@ -682,7 +682,7 @@ void cmGlobalUnixMakefileGenerator3::WriteConvenienceRules2(
     std::string name = gtarget->GetName();
     if (!name.empty() &&
         (gtarget->IsInBuildSystem() &&
-         gtarget->GetType() != cmStateEnums::GLOBAL_TARGET)) {
+         gtarget->GetType() != cm::TargetType::GLOBAL_TARGET)) {
       std::string makefileName;
       // Add a rule to build the target by name.
       localName = lg.GetRelativeTargetDirectory(gtarget.get());
@@ -1132,18 +1132,18 @@ void cmGlobalUnixMakefileGenerator3::WriteHelpRule(
     if (&lg2 == lg || lg->IsRootMakefile()) {
       // for each target Generate the rule files for each target.
       for (auto const& target : lg2.GetGeneratorTargets()) {
-        cmStateEnums::TargetType type = target->GetType();
-        if ((type == cmStateEnums::EXECUTABLE) ||
-            (type == cmStateEnums::STATIC_LIBRARY) ||
-            (type == cmStateEnums::SHARED_LIBRARY) ||
-            (type == cmStateEnums::MODULE_LIBRARY) ||
-            (type == cmStateEnums::OBJECT_LIBRARY) ||
-            (type == cmStateEnums::INTERFACE_LIBRARY &&
+        cm::TargetType type = target->GetType();
+        if ((type == cm::TargetType::EXECUTABLE) ||
+            (type == cm::TargetType::STATIC_LIBRARY) ||
+            (type == cm::TargetType::SHARED_LIBRARY) ||
+            (type == cm::TargetType::MODULE_LIBRARY) ||
+            (type == cm::TargetType::OBJECT_LIBRARY) ||
+            (type == cm::TargetType::INTERFACE_LIBRARY &&
              target->IsInBuildSystem())) {
           project_targets.insert(target->GetName());
-        } else if (type == cmStateEnums::GLOBAL_TARGET) {
+        } else if (type == cm::TargetType::GLOBAL_TARGET) {
           globals_targets.insert(target->GetName());
-        } else if (type == cmStateEnums::UTILITY) {
+        } else if (type == cm::TargetType::UTILITY) {
           utility_targets.insert(target->GetName());
         }
       }

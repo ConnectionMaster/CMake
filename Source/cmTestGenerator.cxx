@@ -22,9 +22,9 @@
 #include "cmPropertyMap.h"
 #include "cmRange.h"
 #include "cmScriptGenerator.h"
-#include "cmStateTypes.h"
 #include "cmStringAlgorithms.h"
 #include "cmSystemTools.h"
+#include "cmTargetTypes.h"
 #include "cmTest.h"
 #include "cmValue.h"
 
@@ -143,7 +143,7 @@ bool cmTestGenerator::GetBuildDependencies(cmLocalGenerator* lg,
   if (!this->Test->GetCommand().empty()) {
     std::string exe = this->Test->GetCommand().front();
     cmGeneratorTarget* target = lg->FindGeneratorTargetToUse(exe);
-    if (target && target->GetType() == cmStateEnums::EXECUTABLE &&
+    if (target && target->GetType() == cm::TargetType::EXECUTABLE &&
         !target->IsImported()) {
       dependencies.insert(target);
     }
@@ -220,7 +220,7 @@ void cmTestGenerator::GenerateCommand(std::ostream& os,
   // be translated.
   std::string exe = argv[0];
   cmGeneratorTarget* target = this->LG->FindGeneratorTargetToUse(exe);
-  if (target && target->GetType() == cmStateEnums::EXECUTABLE) {
+  if (target && target->GetType() == cm::TargetType::EXECUTABLE) {
     // Use the target file on disk.
     exe = target->GetFullPath(config);
 

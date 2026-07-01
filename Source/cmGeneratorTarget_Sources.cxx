@@ -41,10 +41,10 @@
 #include "cmSourceFile.h"
 #include "cmSourceFileLocation.h"
 #include "cmSourceGroup.h"
-#include "cmStateTypes.h"
 #include "cmStringAlgorithms.h"
 #include "cmSystemTools.h"
 #include "cmTarget.h"
+#include "cmTargetTypes.h"
 #include "cmValue.h"
 #include "cmake.h"
 
@@ -62,7 +62,7 @@ void AddObjectEntries(cmGeneratorTarget const* headTarget,
     entries.HadContextSensitiveCondition = impl->HadContextSensitiveCondition;
     for (cmLinkItem const& lib : impl->Libraries) {
       if (lib.Target &&
-          lib.Target->GetType() == cmStateEnums::OBJECT_LIBRARY) {
+          lib.Target->GetType() == cm::TargetType::OBJECT_LIBRARY) {
         std::string uniqueName =
           headTarget->GetGlobalGenerator()->IndexGeneratorTargetUniquely(
             lib.Target);
@@ -246,7 +246,7 @@ std::vector<BT<std::string>> cmGeneratorTarget::GetSourceFilePaths(
 
   // Collect TARGET_OBJECTS of direct object link-dependencies.
   bool contextDependentObjects = false;
-  if (this->GetType() != cmStateEnums::OBJECT_LIBRARY) {
+  if (this->GetType() != cm::TargetType::OBJECT_LIBRARY) {
     cm::EvaluatedTargetPropertyEntries linkObjectsEntries;
     AddObjectEntries(this, context, &dagChecker, linkObjectsEntries);
     contextDependentObjects = processSources(this, config, linkObjectsEntries,
@@ -425,8 +425,8 @@ void cmGeneratorTarget::ComputeKindedSources(KindedSources& files,
     } else if (!this->Target->IsNormal() && !this->Target->IsImported() &&
                fs && (fs->GetType() == cm::FileSetMetadata::CXX_MODULES)) {
       kind = SourceKindCxxModuleSource;
-    } else if (this->Target->GetType() == cmStateEnums::UTILITY ||
-               this->Target->GetType() == cmStateEnums::INTERFACE_LIBRARY
+    } else if (this->Target->GetType() == cm::TargetType::UTILITY ||
+               this->Target->GetType() == cm::TargetType::INTERFACE_LIBRARY
                // XXX(clang-tidy): https://bugs.llvm.org/show_bug.cgi?id=44165
                // NOLINTNEXTLINE(bugprone-branch-clone)
     ) {
@@ -442,7 +442,7 @@ void cmGeneratorTarget::ComputeKindedSources(KindedSources& files,
     } else if (!sf->GetOrDetermineLanguage().empty()) {
       if (sf->GetOrDetermineLanguage() == "Rust") {
         // NOLINTNEXTLINE(bugprone-branch-clone)
-        if (this->Target->GetType() == cmStateEnums::OBJECT_LIBRARY) {
+        if (this->Target->GetType() == cm::TargetType::OBJECT_LIBRARY) {
           // There is no main crate root for object libraries.
           kind = SourceKindObjectSource;
         } else if (!rustMainCrateRootSf) {
@@ -464,12 +464,12 @@ void cmGeneratorTarget::ComputeKindedSources(KindedSources& files,
       }
     } else if (ext == "def") {
       kind = SourceKindModuleDefinition;
-      if (this->GetType() == cmStateEnums::OBJECT_LIBRARY) {
+      if (this->GetType() == cm::TargetType::OBJECT_LIBRARY) {
         badObjLib.push_back(sf);
       }
     } else if (ext == "idl") {
       kind = SourceKindIDL;
-      if (this->GetType() == cmStateEnums::OBJECT_LIBRARY) {
+      if (this->GetType() == cm::TargetType::OBJECT_LIBRARY) {
         badObjLib.push_back(sf);
       }
     } else if (ext == "resx") {

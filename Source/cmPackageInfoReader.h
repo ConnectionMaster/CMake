@@ -14,11 +14,13 @@
 
 #include <cm3p/json/value.h>
 
-#include "cmStateTypes.h"
-
 class cmExecutionStatus;
 class cmMakefile;
 class cmTarget;
+
+namespace cm {
+enum class TargetType;
+} // namespace cm
 
 struct cmPackageRequirement
 {
@@ -87,8 +89,7 @@ public:
 private:
   cmPackageInfoReader() = default;
 
-  cmTarget* AddLibraryComponent(cmMakefile* makefile,
-                                cmStateEnums::TargetType type,
+  cmTarget* AddLibraryComponent(cmMakefile* makefile, cm::TargetType type,
                                 std::string const& name,
                                 Json::Value const& data,
                                 std::string const& package, bool global) const;
