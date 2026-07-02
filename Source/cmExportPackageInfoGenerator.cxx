@@ -32,6 +32,7 @@
 #include "cmStringAlgorithms.h"
 #include "cmSystemTools.h"
 #include "cmTarget.h"
+#include "cmTargetTypes.h"
 
 static std::string const kCPS_VERSION_STR = "0.14.1";
 
@@ -234,7 +235,7 @@ void cmExportPackageInfoGenerator::GeneratePackageRequires(
 
 Json::Value* cmExportPackageInfoGenerator::GenerateImportTarget(
   Json::Value& components, cmGeneratorTarget const* target,
-  cmStateEnums::TargetType targetType) const
+  cm::TargetType targetType) const
 {
   auto const& name = target->GetExportName();
   if (name.empty()) {
@@ -245,19 +246,19 @@ Json::Value* cmExportPackageInfoGenerator::GenerateImportTarget(
   Json::Value& type = component["type"];
 
   switch (targetType) {
-    case cmStateEnums::EXECUTABLE:
+    case cm::TargetType::EXECUTABLE:
       type = "executable";
       break;
-    case cmStateEnums::STATIC_LIBRARY:
+    case cm::TargetType::STATIC_LIBRARY:
       type = "archive";
       break;
-    case cmStateEnums::SHARED_LIBRARY:
+    case cm::TargetType::SHARED_LIBRARY:
       type = "dylib";
       break;
-    case cmStateEnums::MODULE_LIBRARY:
+    case cm::TargetType::MODULE_LIBRARY:
       type = "module";
       break;
-    case cmStateEnums::INTERFACE_LIBRARY:
+    case cm::TargetType::INTERFACE_LIBRARY:
       type = target->IsSymbolic() ? "symbolic" : "interface";
       break;
     default:

@@ -358,9 +358,10 @@ void cmGlobalVisualStudio8Generator::AddExtraIDETargets()
 bool cmGlobalVisualStudio8Generator::NeedsDeploy(
   cmGeneratorTarget const& target, char const* config) const
 {
-  cmStateEnums::TargetType const type = target.GetType();
-  if (type != cmStateEnums::EXECUTABLE &&
-      type != cmStateEnums::SHARED_LIBRARY && type != cmStateEnums::UTILITY) {
+  cm::TargetType const type = target.GetType();
+  if (type != cm::TargetType::EXECUTABLE &&
+      type != cm::TargetType::SHARED_LIBRARY &&
+      type != cm::TargetType::UTILITY) {
     // deployment only valid on executables, shared libraries, and utilities.
     return false;
   }

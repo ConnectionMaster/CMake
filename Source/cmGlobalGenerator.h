@@ -34,6 +34,7 @@
 #include "cmSystemTools.h"
 #include "cmTarget.h"
 #include "cmTargetDepend.h"
+#include "cmTargetTypes.h"
 #include "cmTestGenerator.h"
 #include "cmValue.h"
 #include "cmXcFramework.h"
@@ -403,9 +404,9 @@ public:
 
   //! Find a target by name by searching the local generators.
   cmTarget* FindTarget(std::string const& name,
-                       cmStateEnums::TargetDomainSet domains = {
-                         cmStateEnums::TargetDomain::NATIVE,
-                         cmStateEnums::TargetDomain::ALIAS }) const;
+                       cm::TargetDomainSet domains = {
+                         cm::TargetDomain::NATIVE,
+                         cm::TargetDomain::ALIAS }) const;
 
   cmGeneratorTarget* FindGeneratorTarget(std::string const& name) const;
 
@@ -885,7 +886,7 @@ protected:
   std::map<std::string, std::string> AliasTargets;
 
   cmTarget* FindTargetImpl(std::string const& name,
-                           cmStateEnums::TargetDomainSet domains) const;
+                           cm::TargetDomainSet domains) const;
 
   cmGeneratorTarget* FindGeneratorTargetImpl(std::string const& name) const;
 

@@ -21,8 +21,8 @@
 #include "cmGeneratorTarget.h"
 #include "cmList.h"
 #include "cmPackageInfoArguments.h"
-#include "cmStateTypes.h"
 #include "cmStringAlgorithms.h"
+#include "cmTargetTypes.h"
 
 cmExportBuildPackageInfoGenerator::cmExportBuildPackageInfoGenerator(
   cmPackageInfoArguments arguments, cmDiagnosticContext context)
@@ -50,7 +50,7 @@ bool cmExportBuildPackageInfoGenerator::GenerateMainFile(std::ostream& os)
   // Create all the imported targets.
   for (auto const& exp : this->Exports) {
     cmGeneratorTarget* const target = exp.Target;
-    cmStateEnums::TargetType targetType = this->GetExportTargetType(target);
+    cm::TargetType targetType = this->GetExportTargetType(target);
 
     Json::Value* const component =
       this->GenerateImportTarget(components, target, targetType);
@@ -65,7 +65,7 @@ bool cmExportBuildPackageInfoGenerator::GenerateMainFile(std::ostream& os)
     this->PopulateInterfaceLinkLibrariesProperty(
       target, cmGeneratorExpression::InstallInterface, properties);
 
-    if (targetType != cmStateEnums::INTERFACE_LIBRARY) {
+    if (targetType != cm::TargetType::INTERFACE_LIBRARY) {
       auto configurations = Json::Value{ Json::objectValue };
 
       // Add per-configuration properties.
@@ -109,7 +109,8 @@ void cmExportBuildPackageInfoGenerator::GenerateInterfacePropertiesConfig(
 
   ImportPropertyMap properties;
 
-  assert(this->GetExportTargetType(target) != cmStateEnums::INTERFACE_LIBRARY);
+  assert(this->GetExportTargetType(target) !=
+         cm::TargetType::INTERFACE_LIBRARY);
   this->SetImportLocationProperty(config, suffix, target, properties);
   if (properties.empty()) {
     return;

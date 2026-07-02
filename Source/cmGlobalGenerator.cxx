@@ -456,7 +456,7 @@ bool cmGlobalGenerator::CheckTargetsForType() const
         continue;
       }
 
-      if (target->GetType() == cmStateEnums::EXECUTABLE) {
+      if (target->GetType() == cm::TargetType::EXECUTABLE) {
         std::vector<std::string> const& configs =
           target->Makefile->GetGeneratorConfigs(
             cmMakefile::IncludeEmptyConfig);
@@ -2084,15 +2084,14 @@ bool cmGlobalGenerator::AddHeaderSetVerification()
 
   cmTarget* allVerifyInterfaceTarget =
     this->Makefiles.front()->FindTargetToUse(
-      "all_verify_interface_header_sets",
-      { cmStateEnums::TargetDomain::NATIVE });
+      "all_verify_interface_header_sets", { cm::TargetDomain::NATIVE });
   if (allVerifyInterfaceTarget) {
     this->LocalGenerators.front()->AddGeneratorTarget(
       cm::make_unique<cmGeneratorTarget>(allVerifyInterfaceTarget,
                                          this->LocalGenerators.front().get()));
   }
   cmTarget* allVerifyPrivateTarget = this->Makefiles.front()->FindTargetToUse(
-    "all_verify_private_header_sets", { cmStateEnums::TargetDomain::NATIVE });
+    "all_verify_private_header_sets", { cm::TargetDomain::NATIVE });
   if (allVerifyPrivateTarget) {
     this->LocalGenerators.front()->AddGeneratorTarget(
       cm::make_unique<cmGeneratorTarget>(allVerifyPrivateTarget,
@@ -2362,7 +2361,7 @@ cmGlobalGenerator::TargetDirectoryRegistration&
 cmGlobalGenerator::RegisterTargetDirectory(cmGeneratorTarget const* tgt,
                                            std::string const& targetDir) const
 {
-  if (!tgt->IsNormal() || tgt->GetType() == cmStateEnums::GLOBAL_TARGET ||
+  if (!tgt->IsNormal() || tgt->GetType() == cm::TargetType::GLOBAL_TARGET ||
       tgt->Target->IsForTryCompile()) {
     static TargetDirectoryRegistration utilityRegistration(nullptr, true);
     return utilityRegistration;
@@ -2401,7 +2400,7 @@ void cmGlobalGenerator::CheckTargetProperties()
   for (unsigned int i = 0; i < this->Makefiles.size(); ++i) {
     this->Makefiles[i]->Generate(*this->LocalGenerators[i]);
     for (auto const& target : this->Makefiles[i]->GetTargets()) {
-      if (target.second.GetType() == cmStateEnums::INTERFACE_LIBRARY) {
+      if (target.second.GetType() == cm::TargetType::INTERFACE_LIBRARY) {
         continue;
       }
       for (auto const& lib : target.second.GetOriginalLinkLibraries()) {
@@ -2961,12 +2960,11 @@ void cmGlobalGenerator::IndexLocalGenerator(cmLocalGenerator* lg)
   this->LocalGeneratorSearchIndex[id.String] = lg;
 }
 
-cmTarget* cmGlobalGenerator::FindTargetImpl(
-  std::string const& name, cmStateEnums::TargetDomainSet domains) const
+cmTarget* cmGlobalGenerator::FindTargetImpl(std::string const& name,
+                                            cm::TargetDomainSet domains) const
 {
-  bool const useForeign =
-    domains.contains(cmStateEnums::TargetDomain::FOREIGN);
-  bool const useNative = domains.contains(cmStateEnums::TargetDomain::NATIVE);
+  bool const useForeign = domains.contains(cm::TargetDomain::FOREIGN);
+  bool const useNative = domains.contains(cm::TargetDomain::NATIVE);
 
   auto const it = this->TargetSearchIndex.find(name);
   if (it != this->TargetSearchIndex.end()) {
@@ -2987,10 +2985,10 @@ cmGeneratorTarget* cmGlobalGenerator::FindGeneratorTargetImpl(
   return nullptr;
 }
 
-cmTarget* cmGlobalGenerator::FindTarget(
-  std::string const& name, cmStateEnums::TargetDomainSet domains) const
+cmTarget* cmGlobalGenerator::FindTarget(std::string const& name,
+                                        cm::TargetDomainSet domains) const
 {
-  if (domains.contains(cmStateEnums::TargetDomain::ALIAS)) {
+  if (domains.contains(cm::TargetDomain::ALIAS)) {
     auto const ai = this->AliasTargets.find(name);
     if (ai != this->AliasTargets.end()) {
       return this->FindTargetImpl(ai->second, domains);
@@ -3034,12 +3032,12 @@ std::vector<std::string> cmGlobalGenerator::GetTestBuildDependencyPaths(
     uniqueDeps.insert(file.Path);
   }
   for (cmGeneratorTarget* target : deps.Targets) {
-    if (target->GetType() == cmStateEnums::TargetType::UTILITY ||
-        target->GetType() == cmStateEnums::TargetType::GLOBAL_TARGET ||
-        target->GetType() == cmStateEnums::TargetType::INTERFACE_LIBRARY) {
+    if (target->GetType() == cm::TargetType::UTILITY ||
+        target->GetType() == cm::TargetType::GLOBAL_TARGET ||
+        target->GetType() == cm::TargetType::INTERFACE_LIBRARY) {
       continue;
     }
-    if (target->GetType() == cmStateEnums::TargetType::OBJECT_LIBRARY) {
+    if (target->GetType() == cm::TargetType::OBJECT_LIBRARY) {
       std::vector<std::string> objects;
       target->GetTargetObjectNames(config, objects);
       for (auto const& object : objects) {
@@ -3748,8 +3746,8 @@ void cmGlobalGenerator::CreateGlobalTarget(GlobalTargetInfo const& gti,
                                            cmMakefile* mf)
 {
   // Package
-  auto tb =
-    mf->CreateNewTarget(gti.Name, cmStateEnums::GLOBAL_TARGET, gti.PerConfig);
+  auto tb = mf->CreateNewTarget(gti.Name, cm::TargetType::GLOBAL_TARGET,
+                                gti.PerConfig);
 
   // Do nothing if gti.Name is already used
   if (!tb.second) {
@@ -3898,7 +3896,7 @@ cmGlobalGenerator::TargetDependSet cmGlobalGenerator::GetTargetsForProject(
 
 bool cmGlobalGenerator::IsRootOnlyTarget(cmGeneratorTarget* target) const
 {
-  return (target->GetType() == cmStateEnums::GLOBAL_TARGET ||
+  return (target->GetType() == cm::TargetType::GLOBAL_TARGET ||
           target->GetName() == this->GetAllTargetName());
 }
 

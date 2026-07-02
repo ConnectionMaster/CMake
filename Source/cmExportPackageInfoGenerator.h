@@ -13,7 +13,10 @@
 
 #include "cmExportFileGenerator.h"
 #include "cmFindPackageStack.h"
-#include "cmStateTypes.h"
+
+namespace cm {
+enum class TargetType;
+} // namespace cm
 
 namespace Json {
 class Value;
@@ -57,7 +60,7 @@ protected:
   Json::Value GeneratePackageInfo() const;
   Json::Value* GenerateImportTarget(Json::Value& components,
                                     cmGeneratorTarget const* target,
-                                    cmStateEnums::TargetType targetType) const;
+                                    cm::TargetType targetType) const;
 
   void GeneratePackageRequires(Json::Value& package) const;
 

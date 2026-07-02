@@ -55,6 +55,7 @@
 #include "cmSystemTools.h"
 #include "cmTarget.h"
 #include "cmTargetDepend.h"
+#include "cmTargetTypes.h"
 #include "cmTest.h"
 #include "cmTestGenerator.h"
 #include "cmValue.h"
@@ -1397,16 +1398,16 @@ void cmGlobalNinjaGenerator::AppendTargetOutputs(
   bool realname = target->IsFrameworkOnApple();
 
   switch (target->GetType()) {
-    case cmStateEnums::SHARED_LIBRARY:
-    case cmStateEnums::STATIC_LIBRARY:
-    case cmStateEnums::MODULE_LIBRARY: {
+    case cm::TargetType::SHARED_LIBRARY:
+    case cm::TargetType::STATIC_LIBRARY:
+    case cm::TargetType::MODULE_LIBRARY: {
       if (depends == DependOnTargetOrdering) {
         outputs.push_back(this->OrderDependsTargetForTarget(target, config));
         break;
       }
     }
       CM_FALLTHROUGH;
-    case cmStateEnums::EXECUTABLE: {
+    case cm::TargetType::EXECUTABLE: {
       if (target->IsApple() && target->HasImportLibrary(config)) {
         outputs.push_back(this->ConvertToNinjaPath(target->GetFullPath(
           config, cmStateEnums::ImportLibraryArtifact, realname)));
@@ -1415,16 +1416,16 @@ void cmGlobalNinjaGenerator::AppendTargetOutputs(
         config, cmStateEnums::RuntimeBinaryArtifact, realname)));
       break;
     }
-    case cmStateEnums::OBJECT_LIBRARY: {
+    case cm::TargetType::OBJECT_LIBRARY: {
       if (depends == DependOnTargetOrdering) {
         outputs.push_back(this->OrderDependsTargetForTarget(target, config));
         break;
       }
     }
       CM_FALLTHROUGH;
-    case cmStateEnums::GLOBAL_TARGET:
-    case cmStateEnums::INTERFACE_LIBRARY:
-    case cmStateEnums::UTILITY: {
+    case cm::TargetType::GLOBAL_TARGET:
+    case cm::TargetType::INTERFACE_LIBRARY:
+    case cm::TargetType::UTILITY: {
       std::string path =
         cmStrCat(target->GetLocalGenerator()->GetCurrentBinaryDirectory(), '/',
                  target->GetName());
@@ -1436,7 +1437,7 @@ void cmGlobalNinjaGenerator::AppendTargetOutputs(
       break;
     }
 
-    case cmStateEnums::UNKNOWN_LIBRARY:
+    case cm::TargetType::UNKNOWN_LIBRARY:
       break;
   }
 }
@@ -1446,7 +1447,7 @@ void cmGlobalNinjaGenerator::AppendTargetDepends(
   std::string const& config, std::string const& fileConfig,
   cmNinjaTargetDepends depends)
 {
-  if (target->GetType() == cmStateEnums::GLOBAL_TARGET) {
+  if (target->GetType() == cm::TargetType::GLOBAL_TARGET) {
     // These depend only on other CMake-provided targets, e.g. "all".
     for (BT<std::pair<std::string, bool>> const& util :
          target->GetUtilities()) {
@@ -3231,7 +3232,7 @@ std::set<std::string> cmGlobalNinjaGenerator::GetCrossConfigs(
 bool cmGlobalNinjaGenerator::IsSingleConfigUtility(
   cmGeneratorTarget const* target) const
 {
-  return target->GetType() == cmStateEnums::UTILITY &&
+  return target->GetType() == cm::TargetType::UTILITY &&
     !this->PerConfigUtilityTargets.count(target->GetName());
 }
 

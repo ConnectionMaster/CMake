@@ -54,6 +54,7 @@
 #include "cmStringAlgorithms.h"
 #include "cmSystemTools.h"
 #include "cmTarget.h"
+#include "cmTargetTypes.h"
 #include "cmValue.h"
 #include "cmake.h"
 
@@ -4841,12 +4842,12 @@ static const struct TargetObjectsNode : public cmGeneratorExpressionNode
       reportError(eval, content->GetOriginalExpression(), e.str());
       return std::string();
     }
-    cmStateEnums::TargetType type = gt->GetType();
-    if (type != cmStateEnums::EXECUTABLE &&
-        type != cmStateEnums::STATIC_LIBRARY &&
-        type != cmStateEnums::SHARED_LIBRARY &&
-        type != cmStateEnums::MODULE_LIBRARY &&
-        type != cmStateEnums::OBJECT_LIBRARY) {
+    cm::TargetType type = gt->GetType();
+    if (type != cm::TargetType::EXECUTABLE &&
+        type != cm::TargetType::STATIC_LIBRARY &&
+        type != cm::TargetType::SHARED_LIBRARY &&
+        type != cm::TargetType::MODULE_LIBRARY &&
+        type != cm::TargetType::OBJECT_LIBRARY) {
       std::ostringstream e;
       e << "Objects of target \"" << tgtName
         << "\" referenced but is not one of the allowed target types "
@@ -4970,10 +4971,10 @@ struct TargetRuntimeDllsBaseNode : public cmGeneratorExpressionNode
       reportError(eval, content->GetOriginalExpression(), e.str());
       return std::vector<std::string>();
     }
-    cmStateEnums::TargetType type = gt->GetType();
-    if (type != cmStateEnums::EXECUTABLE &&
-        type != cmStateEnums::SHARED_LIBRARY &&
-        type != cmStateEnums::MODULE_LIBRARY) {
+    cm::TargetType type = gt->GetType();
+    if (type != cm::TargetType::EXECUTABLE &&
+        type != cm::TargetType::SHARED_LIBRARY &&
+        type != cm::TargetType::MODULE_LIBRARY) {
       std::ostringstream e;
       e << "Objects of target \"" << tgtName
         << "\" referenced but is not one of the allowed target types "
@@ -5337,7 +5338,7 @@ struct TargetFilesystemArtifactResultCreator<ArtifactSonameTag>
                     "for DLL target platforms.");
       return std::string();
     }
-    if (target->GetType() != cmStateEnums::SHARED_LIBRARY) {
+    if (target->GetType() != cm::TargetType::SHARED_LIBRARY) {
       ::reportError(eval, content->GetOriginalExpression(),
                     "TARGET_SONAME_FILE is allowed only for "
                     "SHARED libraries.");
@@ -5370,7 +5371,7 @@ struct TargetFilesystemArtifactResultCreator<ArtifactSonameImportTag>
                     "for DLL target platforms.");
       return std::string();
     }
-    if (target->GetType() != cmStateEnums::SHARED_LIBRARY) {
+    if (target->GetType() != cm::TargetType::SHARED_LIBRARY) {
       ::reportError(eval, content->GetOriginalExpression(),
                     "TARGET_SONAME_IMPORT_FILE is allowed only for "
                     "SHARED libraries.");
@@ -5419,11 +5420,11 @@ struct TargetFilesystemArtifactResultCreator<ArtifactPdbTag>
       return std::string();
     }
 
-    cmStateEnums::TargetType targetType = target->GetType();
+    cm::TargetType targetType = target->GetType();
 
-    if (targetType != cmStateEnums::SHARED_LIBRARY &&
-        targetType != cmStateEnums::MODULE_LIBRARY &&
-        targetType != cmStateEnums::EXECUTABLE) {
+    if (targetType != cm::TargetType::SHARED_LIBRARY &&
+        targetType != cm::TargetType::MODULE_LIBRARY &&
+        targetType != cm::TargetType::EXECUTABLE) {
       ::reportError(eval, content->GetOriginalExpression(),
                     "TARGET_PDB_FILE is allowed only for "
                     "targets with linker created artifacts.");
@@ -5469,7 +5470,7 @@ struct TargetFilesystemArtifactResultCreator<ArtifactLinkerLibraryTag>
   {
     // The file used to link to the target (.dylib, .so, .a).
     if (!target->IsLinkable() ||
-        target->GetType() == cmStateEnums::EXECUTABLE) {
+        target->GetType() == cm::TargetType::EXECUTABLE) {
       ::reportError(eval, content->GetOriginalExpression(),
                     "TARGET_LINKER_LIBRARY_FILE is allowed only for libraries "
                     "with ENABLE_EXPORTS.");
@@ -5477,7 +5478,7 @@ struct TargetFilesystemArtifactResultCreator<ArtifactLinkerLibraryTag>
     }
 
     if (!target->IsDLLPlatform() ||
-        target->GetType() == cmStateEnums::STATIC_LIBRARY) {
+        target->GetType() == cm::TargetType::STATIC_LIBRARY) {
       return target->GetFullPath(eval->Context.Config,
                                  cmStateEnums::RuntimeBinaryArtifact);
     }
@@ -5676,8 +5677,8 @@ protected:
                     cmStrCat("No target \"", name, '"'));
       return nullptr;
     }
-    if (target->GetType() >= cmStateEnums::OBJECT_LIBRARY &&
-        target->GetType() != cmStateEnums::UNKNOWN_LIBRARY) {
+    if (target->GetType() >= cm::TargetType::OBJECT_LIBRARY &&
+        target->GetType() != cm::TargetType::UNKNOWN_LIBRARY) {
       ::reportError(
         eval, content->GetOriginalExpression(),
         cmStrCat("Target \"", name, "\" is not an executable or library."));
@@ -5867,7 +5868,7 @@ struct TargetOutputNameArtifactResultGetter<ArtifactLinkerLibraryTag>
   {
     // The library file used to link to the target (.so, .lib, .a).
     if (!target->IsLinkable() ||
-        target->GetType() == cmStateEnums::EXECUTABLE) {
+        target->GetType() == cm::TargetType::EXECUTABLE) {
       ::reportError(eval, content->GetOriginalExpression(),
                     "TARGET_LINKER_LIBRARY_FILE_BASE_NAME is allowed only for "
                     "libraries with ENABLE_EXPORTS.");
@@ -5875,7 +5876,7 @@ struct TargetOutputNameArtifactResultGetter<ArtifactLinkerLibraryTag>
     }
 
     if (!target->IsDLLPlatform() ||
-        target->GetType() == cmStateEnums::STATIC_LIBRARY) {
+        target->GetType() == cm::TargetType::STATIC_LIBRARY) {
       auto output = target->GetOutputName(eval->Context.Config,
                                           cmStateEnums::ImportLibraryArtifact);
       return postfix != Postfix::Exclude
@@ -5942,11 +5943,11 @@ struct TargetOutputNameArtifactResultGetter<ArtifactPdbTag>
       return std::string();
     }
 
-    cmStateEnums::TargetType targetType = target->GetType();
+    cm::TargetType targetType = target->GetType();
 
-    if (targetType != cmStateEnums::SHARED_LIBRARY &&
-        targetType != cmStateEnums::MODULE_LIBRARY &&
-        targetType != cmStateEnums::EXECUTABLE) {
+    if (targetType != cm::TargetType::SHARED_LIBRARY &&
+        targetType != cm::TargetType::MODULE_LIBRARY &&
+        targetType != cm::TargetType::EXECUTABLE) {
       ::reportError(eval, content->GetOriginalExpression(),
                     "TARGET_PDB_FILE_BASE_NAME is allowed only for "
                     "targets with linker created artifacts.");
@@ -6107,7 +6108,7 @@ struct TargetFileArtifactResultGetter<ArtifactLinkerLibraryFilePrefixTag>
                          GeneratorExpressionContent const* content)
   {
     if (!target->IsLinkable() ||
-        target->GetType() == cmStateEnums::EXECUTABLE) {
+        target->GetType() == cm::TargetType::EXECUTABLE) {
       ::reportError(
         eval, content->GetOriginalExpression(),
         "TARGET_LINKER_LIBRARY_FILE_PREFIX is allowed only for libraries "
@@ -6116,7 +6117,7 @@ struct TargetFileArtifactResultGetter<ArtifactLinkerLibraryFilePrefixTag>
     }
 
     if (!target->IsDLLPlatform() ||
-        target->GetType() == cmStateEnums::STATIC_LIBRARY) {
+        target->GetType() == cm::TargetType::STATIC_LIBRARY) {
       return target->GetFilePrefix(eval->Context.Config,
                                    cmStateEnums::RuntimeBinaryArtifact);
     }
@@ -6200,7 +6201,7 @@ struct TargetFileArtifactResultGetter<ArtifactLinkerLibraryFileSuffixTag>
                          GeneratorExpressionContent const* content)
   {
     if (!target->IsLinkable() ||
-        target->GetType() == cmStateEnums::STATIC_LIBRARY) {
+        target->GetType() == cm::TargetType::STATIC_LIBRARY) {
       ::reportError(eval, content->GetOriginalExpression(),
                     "TARGET_LINKER_LIBRARY_FILE_SUFFIX is allowed only for "
                     "libraries with ENABLE_EXPORTS.");
@@ -6208,7 +6209,7 @@ struct TargetFileArtifactResultGetter<ArtifactLinkerLibraryFileSuffixTag>
     }
 
     if (!target->IsDLLPlatform() ||
-        target->GetType() == cmStateEnums::STATIC_LIBRARY) {
+        target->GetType() == cm::TargetType::STATIC_LIBRARY) {
       return target->GetFileSuffix(eval->Context.Config,
                                    cmStateEnums::RuntimeBinaryArtifact);
     }
