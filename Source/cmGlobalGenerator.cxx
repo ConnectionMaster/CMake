@@ -94,7 +94,8 @@ std::string GeneratedMakeCommand::QuotedPrintable() const
   flags |= cmOutputConverter::Shell_Flag_IsUnix;
 #endif
   for (auto const& arg : this->PrimaryCommand) {
-    output += cmStrCat(sep, cmOutputConverter::EscapeForShell(arg, flags));
+    output = cmStrCat(std::move(output), sep,
+                      cmOutputConverter::EscapeForShell(arg, flags));
     sep = " ";
   }
   return output;
@@ -285,7 +286,6 @@ void cmGlobalGenerator::ResolveLanguageCompiler(std::string const& lang,
     cname = cmValue(cnameArgList.front());
   }
 
-  std::string changeVars;
   if (cname && !optional) {
     cmCMakePath cachedPath;
     if (!cmSystemTools::FileIsFullPath(*cname)) {
@@ -661,17 +661,18 @@ void cmGlobalGenerator::EnableLanguage(
   bool fatalError = false;
 
   mf->AddDefinitionBool("RUN_CONFIGURE", true);
-  std::string rootBin =
-    cmStrCat(this->CMakeInstance->GetHomeOutputDirectory(), "/CMakeFiles");
+  std::string rootBin;
 
   // If the configuration files path has been set,
   // then we are in a try compile and need to copy the enable language
   // files from the parent cmake bin dir, into the try compile bin dir
   if (!this->ConfiguredFilesPath.empty()) {
     rootBin = this->ConfiguredFilesPath;
+  } else {
+    rootBin =
+      cmStrCat(this->CMakeInstance->GetHomeOutputDirectory(), "/CMakeFiles");
   }
-  rootBin += '/';
-  rootBin += cmVersion::GetCMakeVersion();
+  rootBin = cmStrCat(std::move(rootBin), '/', cmVersion::GetCMakeVersion());
 
   // set the dir for parent files so they can be used by modules
   mf->AddDefinition("CMAKE_PLATFORM_INFO_DIR", rootBin);
@@ -2436,9 +2437,8 @@ void cmGlobalGenerator::CheckTargetProperties()
   if (!notFoundMap.empty()) {
     std::string notFoundVars;
     for (auto const& notFound : notFoundMap) {
-      notFoundVars += notFound.first;
-      notFoundVars += notFound.second;
-      notFoundVars += '\n';
+      notFoundVars = cmStrCat(std::move(notFoundVars), notFound.first,
+                              notFound.second, '\n');
     }
     cmSystemTools::Error(
       cmStrCat("The following variables are used in this project, "
@@ -4166,8 +4166,7 @@ std::string cmGlobalGenerator::EscapeJSON(std::string const& s)
     switch (i) {
       case '"':
       case '\\':
-        result += '\\';
-        result += i;
+        result = cmStrCat(std::move(result), '\\', i);
         break;
       case '\n':
         result += "\\n";

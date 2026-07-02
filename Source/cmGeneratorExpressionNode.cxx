@@ -492,8 +492,8 @@ static const struct EqualNode : public cmGeneratorExpressionNode
     for (int i = 0; i < 2; ++i) {
       if (!ParameterToLong(parameters[i].c_str(), &numbers[i])) {
         reportError(eval, content->GetOriginalExpression(),
-                    "$<EQUAL> parameter " + parameters[i] +
-                      " is not a valid integer.");
+                    cmStrCat("$<EQUAL> parameter ", parameters[i],
+                             " is not a valid integer."));
         return {};
       }
     }
@@ -2998,8 +2998,8 @@ struct CompilerIdNode : public cmGeneratorExpressionNode
                                    std::string const& lang) const
   {
     std::string const& compilerId =
-      eval->Context.LG->GetMakefile()->GetSafeDefinition("CMAKE_" + lang +
-                                                         "_COMPILER_ID");
+      eval->Context.LG->GetMakefile()->GetSafeDefinition(
+        cmStrCat("CMAKE_", lang, "_COMPILER_ID"));
     if (parameters.empty()) {
       return compilerId;
     }
@@ -3063,8 +3063,8 @@ struct CompilerVersionNode : public cmGeneratorExpressionNode
                                    std::string const& lang) const
   {
     std::string const& compilerVersion =
-      eval->Context.LG->GetMakefile()->GetSafeDefinition("CMAKE_" + lang +
-                                                         "_COMPILER_VERSION");
+      eval->Context.LG->GetMakefile()->GetSafeDefinition(
+        cmStrCat("CMAKE_", lang, "_COMPILER_VERSION"));
     if (parameters.empty()) {
       return compilerVersion;
     }
@@ -3627,8 +3627,8 @@ struct LinkerId
                               std::string const& lang)
   {
     std::string const& linkerId =
-      eval->Context.LG->GetMakefile()->GetSafeDefinition("CMAKE_" + lang +
-                                                         "_COMPILER_ID");
+      eval->Context.LG->GetMakefile()->GetSafeDefinition(
+        cmStrCat("CMAKE_", lang, "_COMPILER_ID"));
     if (parameters.empty()) {
       return linkerId;
     }

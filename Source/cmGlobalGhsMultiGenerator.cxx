@@ -96,8 +96,8 @@ bool cmGlobalGhsMultiGenerator::SetGeneratorToolset(std::string const& ts,
   }
 
   /* set the build tool to use */
-  std::string gbuild(tsp + ((tsp.back() == '/') ? "" : "/") +
-                     DEFAULT_BUILD_PROGRAM);
+  std::string gbuild =
+    cmStrCat(tsp, ((tsp.back() == '/') ? "" : "/"), DEFAULT_BUILD_PROGRAM);
   cmValue prevTool = mf->GetDefinition("CMAKE_MAKE_PROGRAM");
 
   /* check if the toolset changed from last generate */
@@ -177,7 +177,7 @@ void cmGlobalGhsMultiGenerator::GetToolset(cmMakefile* mf, std::string& tsp,
     // Make sure root exists...
     if (!cmSystemTools::PathExists(root)) {
       std::string msg =
-        "GHS_TOOLSET_ROOT directory \"" + root + "\" does not exist.";
+        cmStrCat("GHS_TOOLSET_ROOT directory \"", root, "\" does not exist.");
       mf->IssueMessage(MessageType::FATAL_ERROR, msg);
       tsp = "";
       return;
@@ -185,7 +185,7 @@ void cmGlobalGhsMultiGenerator::GetToolset(cmMakefile* mf, std::string& tsp,
 
     // Add a directory separator
     if (root.back() != '/') {
-      root += "/";
+      root += '/';
     }
 
     // Get all compiler directories in toolset root
@@ -194,7 +194,7 @@ void cmGlobalGhsMultiGenerator::GetToolset(cmMakefile* mf, std::string& tsp,
     if (output.empty()) {
       // No compiler directories found
       std::string msg =
-        "No GHS toolsets found in GHS_TOOLSET_ROOT \"" + root + "\".";
+        cmStrCat("No GHS toolsets found in GHS_TOOLSET_ROOT \"", root, "\".");
       mf->IssueMessage(MessageType::FATAL_ERROR, msg);
       tsp = "";
     } else {
@@ -210,7 +210,8 @@ void cmGlobalGhsMultiGenerator::GetToolset(cmMakefile* mf, std::string& tsp,
     //       or relative path.
     tryPath = cmSystemTools::CollapseFullPath(ts, root);
     if (!cmSystemTools::FileExists(tryPath)) {
-      std::string msg = "GHS toolset \"" + tryPath + "\" does not exist.";
+      std::string msg =
+        cmStrCat("GHS toolset \"", tryPath, "\" does not exist.");
       mf->IssueMessage(MessageType::FATAL_ERROR, msg);
       tsp = "";
     } else {
@@ -343,7 +344,8 @@ void cmGlobalGhsMultiGenerator::WriteSubProjects(std::ostream& fout,
       predefinedTargets.find(target->GetName()) != predefinedTargets.end();
     if ((filterPredefined && predefinedTarget) ||
         (!filterPredefined && !predefinedTarget)) {
-      fout << target->GetName() + ".tgt" + FILE_EXTENSION << " [Project]\n";
+      fout << cmStrCat(target->GetName(), ".tgt", FILE_EXTENSION)
+           << " [Project]\n";
     }
   }
 }
@@ -483,12 +485,12 @@ cmGlobalGhsMultiGenerator::GenerateBuildCommand(
     if (jobs == cmake::DEFAULT_BUILD_PARALLEL_LEVEL) {
       makeCommand.Add("-parallel");
     } else {
-      makeCommand.Add(std::string("-parallel=") + std::to_string(jobs));
+      makeCommand.Add("-parallel=" + std::to_string(jobs));
     }
   }
 
   /* determine the top-project file in the project directory */
-  std::string proj = projectName + ".top" + FILE_EXTENSION;
+  std::string proj = cmStrCat(projectName, ".top", FILE_EXTENSION);
   std::vector<std::string> files;
   cmSystemTools::Glob(projectDir, ".*\\.top\\.gpj", files);
   if (!files.empty()) {
@@ -517,7 +519,7 @@ cmGlobalGhsMultiGenerator::GenerateBuildCommand(
 
   if (build_all) {
     /* transform name to default build */;
-    std::string all = std::string(this->GetAllTargetName()) + ".tgt.gpj";
+    std::string all = cmStrCat(this->GetAllTargetName(), ".tgt.gpj");
     makeCommand.Add(all);
   }
 
@@ -660,8 +662,8 @@ bool cmGlobalGhsMultiGenerator::AddCheckTarget()
     cm::static_reference_cast<cmLocalGhsMultiGenerator>(generators[0]);
 
   // The name of the output file for the custom command.
-  this->StampFile = lg.GetBinaryDirectory() + std::string("/CMakeFiles/") +
-    CHECK_BUILD_SYSTEM_TARGET;
+  this->StampFile = cmStrCat(lg.GetBinaryDirectory(), "/CMakeFiles/",
+                             CHECK_BUILD_SYSTEM_TARGET);
 
   // Add a custom rule to re-run CMake if any input files changed.
   {
