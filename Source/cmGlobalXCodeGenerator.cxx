@@ -2122,11 +2122,17 @@ cmXCodeObject* cmGlobalXCodeGenerator::CreateRunScriptBuildPhase(
   auto depfilesPrefix = cmStrCat(depfilesDirectory, buildPhase->GetId(), '.');
 
   std::string shellScript = "set -e\n";
+  // Use the comment from the first configuration; the Xcode build phase has a
+  // single name shared across all configurations.
+  cm::optional<std::string> comment;
   for (std::string const& configName : this->CurrentConfigurationTypes) {
     cmCustomCommandGenerator ccg(
       cc, configName, this->CurrentLocalGenerator, true, {},
       [&depfilesPrefix](std::string const& config, std::string const&)
         -> std::string { return cmStrCat(depfilesPrefix, config, ".d"); });
+    if (!comment) {
+      comment = ccg.GetComment();
+    }
     std::vector<std::string> realDepends;
     realDepends.reserve(ccg.GetDepends().size());
     for (auto const& d : ccg.GetDepends()) {
@@ -2169,7 +2175,9 @@ cmXCodeObject* cmGlobalXCodeGenerator::CreateRunScriptBuildPhase(
   buildPhase->AddAttribute("files", buildFiles);
   {
     std::string name;
-    if (!allConfigOutputs.empty()) {
+    if (comment && !comment->empty()) {
+      name = *comment;
+    } else if (!allConfigOutputs.empty()) {
       name = cmStrCat("Generate ",
                       this->RelativeToBinary(*allConfigOutputs.begin()));
     } else {
