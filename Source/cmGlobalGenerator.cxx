@@ -295,17 +295,8 @@ void cmGlobalGenerator::ResolveLanguageCompiler(std::string const& lang,
     }
     cmCMakePath foundPath = path;
     if (foundPath.Normal() != cachedPath.Normal()) {
-      cmValue cvars = this->GetCMakeInstance()->GetState()->GetGlobalProperty(
-        "__CMAKE_DELETE_CACHE_CHANGE_VARS_");
-      if (cvars) {
-        changeVars += *cvars;
-        changeVars += ";";
-      }
-      changeVars += langComp;
-      changeVars += ";";
-      changeVars += *cname;
-      this->GetCMakeInstance()->GetState()->SetGlobalProperty(
-        "__CMAKE_DELETE_CACHE_CHANGE_VARS_", changeVars);
+      this->GetCMakeInstance()->GetState()->AddDeleteCacheChangeVar(langComp,
+                                                                    *cname);
     }
   }
 }
@@ -716,12 +707,12 @@ void cmGlobalGenerator::EnableLanguage(
       cmValue storedToolchainFile =
         mf->GetDefinition("_CMAKE_SYSTEM_TOOLCHAIN_FILE");
       if (toolchainFile && toolchainFile != storedToolchainFile) {
-        mf->GetState()->AppendGlobalProperty(
-          "__CMAKE_DELETE_CACHE_CHANGE_VARS_",
-          "CMAKE_TOOLCHAIN_FILE;" + *toolchainFile);
+        mf->GetState()->AddDeleteCacheChangeVar("CMAKE_TOOLCHAIN_FILE",
+                                                *toolchainFile);
         for (std::string const& lang : cur_languages) {
           this->LanguagesInProgress.erase(lang);
         }
+        cmSystemTools::SetFatalErrorOccurred();
         return;
       }
     }

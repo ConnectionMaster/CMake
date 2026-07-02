@@ -59,6 +59,16 @@ block()
   run_cmake(ToolchainFromFile-step2)
 endblock()
 
+# New toolchain path comes from file but old toolchain has been deleted
+file(WRITE "${RunCMake_BINARY_DIR}/baz.cmake" "set(toolchain_var baz)\n")
+block()
+  set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/ToolchainFromFileDeleted-build)
+  run_cmake(ToolchainFromFileDeleted-step1)
+  set(RunCMake_TEST_NO_CLEAN 1)
+  set(ENV{RunCMake_TEST} "ToolchainFromFileDeleted-step2")
+  run_cmake(ToolchainFromFileDeleted-step2)
+endblock()
+
 # New toolchain path comes from command line
 block()
   set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/ToolchainFromCmdline-build)

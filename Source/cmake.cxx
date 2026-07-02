@@ -2374,11 +2374,11 @@ struct SaveCacheEntry
   cmStateEnums::CacheEntryType type;
 };
 
-int cmake::HandleDeleteCacheVariables(std::string const& var)
+int cmake::HandleDeleteCacheVariables(
+  std::map<std::string, std::string> const& vars)
 {
-  cmList argsSplit{ var, cmList::EmptyElements::Yes };
-  // erase the property to avoid infinite recursion
-  this->State->SetGlobalProperty("__CMAKE_DELETE_CACHE_CHANGE_VARS_", "");
+  // erase the set to avoid infinite recursion
+  this->State->ClearDeleteCacheChangeVars();
   if (this->GetIsInTryCompile()) {
     return 0;
   }
@@ -2388,18 +2388,11 @@ int cmake::HandleDeleteCacheVariables(std::string const& var)
     << "You have changed variables that require your cache to be deleted.\n"
        "Configure will be re-run and you may have to reset some variables.\n"
        "The following variables have changed:\n";
-  for (auto i = argsSplit.begin(); i != argsSplit.end(); ++i) {
+  for (auto const& var : vars) {
     SaveCacheEntry save;
-    save.key = *i;
-    warning << *i << "= ";
-    i++;
-    if (i != argsSplit.end()) {
-      save.value = *i;
-      warning << *i << '\n';
-    } else {
-      warning << '\n';
-      i -= 1;
-    }
+    save.key = var.first;
+    save.value = var.second;
+    warning << save.key << "= " << save.value << '\n';
     cmValue existingValue = this->State->GetCacheEntryValue(save.key);
     if (existingValue) {
       save.type = this->State->GetCacheEntryType(save.key);
@@ -2425,6 +2418,15 @@ int cmake::HandleDeleteCacheVariables(std::string const& var)
   // avoid reconfigure if there were errors
   if (!cmSystemTools::GetErrorOccurredFlag()) {
     // re-run configure
+    this->State->SetReconfiguring(true);
+    return this->Configure();
+  }
+
+  // Toolchain changes trigger a fatal error, but reconfiguring with the new
+  // toolchain should fix them.
+  if (vars.count("CMAKE_TOOLCHAIN_FILE") && !this->State->IsReconfiguring()) {
+    cmSystemTools::ResetErrorOccurredFlag();
+    this->State->SetReconfiguring(true);
     return this->Configure();
   }
   return 0;
@@ -2523,10 +2525,10 @@ int cmake::Configure()
                       cmStateEnums::INTERNAL);
 
   int ret = this->ActualConfigure();
-  cmValue delCacheVars =
-    this->State->GetGlobalProperty("__CMAKE_DELETE_CACHE_CHANGE_VARS_");
-  if (delCacheVars && !delCacheVars->empty()) {
-    return this->HandleDeleteCacheVariables(*delCacheVars);
+  std::map<std::string, std::string> delCacheVars =
+    this->State->GetDeleteCacheChangeVars();
+  if (!delCacheVars.empty()) {
+    return this->HandleDeleteCacheVariables(delCacheVars);
   }
   return ret;
 }

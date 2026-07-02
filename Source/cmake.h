@@ -710,7 +710,8 @@ public:
 
 protected:
   void RunCheckForUnusedVariables();
-  int HandleDeleteCacheVariables(std::string const& var);
+  int HandleDeleteCacheVariables(
+    std::map<std::string, std::string> const& var);
 
   using RegisteredGeneratorsVector =
     std::vector<std::unique_ptr<cmGlobalGeneratorFactory>>;
