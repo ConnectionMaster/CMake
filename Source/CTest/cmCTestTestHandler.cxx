@@ -52,6 +52,7 @@
 #include "cmMakefile.h"
 #include "cmState.h"
 #include "cmStateSnapshot.h"
+#include "cmStdIoTerminal.h"
 #include "cmStringAlgorithms.h"
 #include "cmSystemTools.h"
 #include "cmTestDiscovery.h"
@@ -655,27 +656,21 @@ void cmCTestTestHandler::LogTestSummary(std::vector<std::string> const& passed,
     percent = 99;
   }
 
-  std::string passColorCode;
-  std::string failedColorCode;
+  cm::StdIo::TermAttrSet summaryAttrs;
   if (failed.empty()) {
-    passColorCode = this->CTest->GetColorCode(cmCTest::Color::GREEN);
+    summaryAttrs = cm::StdIo::TermAttr::ForegroundGreen;
   } else {
-    failedColorCode = this->CTest->GetColorCode(cmCTest::Color::RED);
+    summaryAttrs = cm::StdIo::TermAttr::ForegroundRed;
   }
   if (failed.empty()) {
-    cmCTestLog(this->CTest, HANDLER_OUTPUT,
-               std::endl
-                 << passColorCode << std::lround(percent) << "% tests passed"
-                 << this->CTest->GetColorCode(cmCTest::Color::CLEAR_COLOR)
-                 << " out of " << total << std::endl);
+    cmCTestColorLog(this->CTest, HANDLER_OUTPUT, summaryAttrs,
+                    cmStrCat("\n", std::lround(percent),
+                             "% tests passed out of ", total, "\n"));
   } else {
-    cmCTestLog(this->CTest, HANDLER_OUTPUT,
-               std::endl
-                 << passColorCode << std::lround(percent) << "% tests passed"
-                 << this->CTest->GetColorCode(cmCTest::Color::CLEAR_COLOR)
-                 << ", " << failedColorCode << failed.size() << " tests failed"
-                 << this->CTest->GetColorCode(cmCTest::Color::CLEAR_COLOR)
-                 << " out of " << total << std::endl);
+    cmCTestColorLog(this->CTest, HANDLER_OUTPUT, summaryAttrs,
+                    cmStrCat("\n", std::lround(percent), "% tests passed, ",
+                             failed.size(), " tests failed out of ", total,
+                             "\n"));
   }
   if ((!this->CTest->GetLabelsForSubprojects().empty() &&
        this->CTest->GetSubprojectSummary())) {
@@ -702,8 +697,7 @@ void cmCTestTestHandler::LogDisabledTests(
     this->StartLogFile("TestsDisabled", ofs);
 
     char const* disabled_reason;
-    cmCTestLog(this->CTest, HANDLER_OUTPUT,
-               this->CTest->GetColorCode(cmCTest::Color::BLUE));
+    cm::StdIo::TermAttrSet disabledAttrs = cm::StdIo::TermAttr::ForegroundBlue;
     for (cmCTestTestResult const& dt : disabledTests) {
       ofs << dt.TestCount << ":" << dt.Name << std::endl;
       if (dt.CompletionStatus == "Disabled") {
@@ -711,12 +705,11 @@ void cmCTestTestHandler::LogDisabledTests(
       } else {
         disabled_reason = "Skipped";
       }
-      cmCTestLog(this->CTest, HANDLER_OUTPUT,
-                 "\t" << std::setw(3) << dt.TestCount << " - " << dt.Name
-                      << " (" << disabled_reason << ")" << std::endl);
+      std::ostringstream msg;
+      msg << "\t" << std::setw(3) << dt.TestCount << " - " << dt.Name << " ("
+          << disabled_reason << ")\n";
+      cmCTestColorLog(this->CTest, HANDLER_OUTPUT, disabledAttrs, msg.str());
     }
-    cmCTestLog(this->CTest, HANDLER_OUTPUT,
-               this->CTest->GetColorCode(cmCTest::Color::CLEAR_COLOR));
   }
 }
 
@@ -735,9 +728,9 @@ void cmCTestTestHandler::LogFailedTests(std::vector<std::string> const& failed,
           !cmHasLiteralPrefix(ft.CompletionStatus, "SKIP_") &&
           ft.CompletionStatus != "Disabled") {
         ofs << ft.TestCount << ":" << ft.Name << std::endl;
-        auto testColor = cmCTest::Color::RED;
+        cm::StdIo::TermAttrSet testAttrs = cm::StdIo::TermAttr::ForegroundRed;
         if (this->GetTestStatus(ft) == "Not Run") {
-          testColor = cmCTest::Color::YELLOW;
+          testAttrs = cm::StdIo::TermAttr::ForegroundYellow;
         }
         std::string ft_name_and_status =
           cmStrCat(ft.Name, " (", this->GetTestStatus(ft), ')');
@@ -750,12 +743,10 @@ void cmCTestTestHandler::LogFailedTests(std::vector<std::string> const& failed,
             : maxLen - ft_name_and_status.size();
           labels = cmStrCat(std::string(ns, ' '), cmJoin(p.Labels, " "));
         }
-        cmCTestLog(
-          this->CTest, HANDLER_OUTPUT,
-          "\t" << this->CTest->GetColorCode(testColor) << std::setw(3)
-               << ft.TestCount << " - " << ft_name_and_status
-               << this->CTest->GetColorCode(cmCTest::Color::CLEAR_COLOR)
-               << labels << std::endl);
+        std::ostringstream msg;
+        msg << "\t" << std::setw(3) << ft.TestCount << " - "
+            << ft_name_and_status << labels << "\n";
+        cmCTestColorLog(this->CTest, HANDLER_OUTPUT, testAttrs, msg.str());
       }
     }
   }
