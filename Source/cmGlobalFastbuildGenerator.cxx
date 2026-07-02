@@ -1979,7 +1979,7 @@ void cmGlobalFastbuildGenerator::AddIDEProject(
 {
   auto const& configs = GetConfigNames();
   if (std::find(configs.begin(), configs.end(), config) == configs.end()) {
-    LogMessage("Config " + config + " doesn't exist, IDE projest for " +
+    LogMessage("Config " + config + " doesn't exist, IDE project for " +
                target.Name + " won't be generated");
     return;
   }
