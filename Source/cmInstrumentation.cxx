@@ -1121,7 +1121,9 @@ std::string cmInstrumentation::GetCompileTraceFile(
 {
   cm::string_view const prefix = "-ftime-trace=";
   std::string traceFile;
-  for (auto it = command.rbegin(); it != command.rend(); ++it) {
+  std::vector<std::string> fullCommand =
+    cmSystemTools::HandleResponseFile(command.cbegin(), command.cend());
+  for (auto it = fullCommand.rbegin(); it != fullCommand.rend(); ++it) {
     std::string const& arg = *it;
     if (cmHasPrefix(arg, prefix)) {
       traceFile = arg.substr(prefix.size());

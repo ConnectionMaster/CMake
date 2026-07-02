@@ -443,10 +443,6 @@ if("$ENV{CMAKE_OSX_ARCHITECTURES}" MATCHES "[;$]")
   # `-ftime-trace` with multiple `-arch` puts the trace file in TMPDIR.
   set(Skip_COMPILE_TRACE_QUERY_Case 1)
 endif()
-if(RunCMake_GENERATOR MATCHES "NMake")
-  # `-ftime-trace=` is hidden by `@<< ... <<` response file syntax.
-  set(Skip_COMPILE_TRACE_QUERY_ARG_Case 1)
-endif()
 if (NOT Skip_COMPILE_TRACE_QUERY_Case)
   instrument(cmake-command-compile-trace
     BUILD COMPILE_TRACE_QUERY
@@ -465,6 +461,16 @@ if (NOT Skip_COMPILE_TRACE_QUERY_Case)
       CONFIGURE_ARGS
         "-DINSTRUMENT_COMPILE_TRACE=EXPLICIT"
         "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
+      CHECK_SCRIPT check-data-dir.cmake
+    )
+  endif()
+  if (RunCMake_GENERATOR MATCHES "Ninja" AND NOT CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
+    instrument(cmake-command-compile-trace-rsp
+      BUILD COMPILE_TRACE_QUERY
+      CONFIGURE_ARGS
+        "-DINSTRUMENT_COMPILE_TRACE=EXPLICIT"
+        "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
+        "-DCMAKE_NINJA_FORCE_RESPONSE_FILE=ON"
       CHECK_SCRIPT check-data-dir.cmake
     )
   endif()
