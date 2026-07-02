@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <cm/optional>
@@ -170,6 +171,7 @@ struct Run
 {
   cmSarif::Tool Tool;
   std::vector<Result> Results;
+  std::unordered_map<std::string, ArtifactLocation> OriginalUriBaseIds;
 };
 
 Json::Value GetJson(Run const& run);

@@ -31,21 +31,35 @@ namespace {
 constexpr char const* CMakeSarifOutputFlag = "CMAKE_EXPORT_SARIF";
 constexpr char const* DefaultSarifFile = ".cmake/sarif/cmake.sarif";
 
-cmSarif::Location LocationFromContext(cmListFileContext const& lfc,
-                                      cmake const& cm)
+/// @brief Express the location of a `cmListFileContext` in SARIF
+/// @param[in] uriBaseIds A list of logical base directory names and their path
+///
+/// Build a SARIF location object detailing the location data available from a
+/// context. More specific information like the region (line number) and
+/// function call name will be included if available.
+///
+/// SARIF requests that paths are given relative to a logical base for
+/// relocatability. Context locations will be made relative to a logical base
+/// iff they fall under one of the directories listed in the `uriBaseIds`
+/// map. Bases are tried in order.
+cmSarif::Location LocationFromContext(
+  cmListFileContext const& lfc,
+  std::vector<std::pair<cm::string_view, cm::string_view>> const&
+    uriBaseIds = {})
 {
   cmSarif::Location location;
   location.Physical.Artifact.Uri = lfc.FilePath;
 
   // SARIF requests that paths are given relative to a logical base for
-  // relocatability.
-  // Use the CMake home directory as a base dir for files under it.
-  std::string const& cmHomeDir = cm.GetHomeDirectory();
-  std::string relative =
-    cmSystemTools::RelativeIfUnder(cmHomeDir, location.Physical.Artifact.Uri);
-  if (relative != location.Physical.Artifact.Uri) {
-    location.Physical.Artifact.Uri = relative;
-    location.Physical.Artifact.UriBaseId = cmHomeDir;
+  // relocatability. Check if these files are under any of the bases, if
+  // provided.
+  for (auto const& baseUri : uriBaseIds) {
+    std::string relative = cmSystemTools::RelativeIfUnder(
+      std::string(baseUri.second), location.Physical.Artifact.Uri);
+    if (relative != location.Physical.Artifact.Uri) {
+      location.Physical.Artifact.Uri = relative;
+      location.Physical.Artifact.UriBaseId = std::string(baseUri.first);
+    }
   }
 
   if (!lfc.Name.empty()) {
@@ -67,17 +81,21 @@ cmSarif::Location LocationFromContext(cmListFileContext const& lfc,
   return location;
 }
 
-cm::optional<cmSarif::Location> LastLocation(cmListFileBacktrace backtrace,
-                                             cmake const& cm)
+cm::optional<cmSarif::Location> LastLocation(
+  cmListFileBacktrace backtrace,
+  std::vector<std::pair<cm::string_view, cm::string_view>> const&
+    uriBaseIds = {})
 {
   if (backtrace.Empty()) {
     return {};
   }
-  return LocationFromContext(backtrace.Top(), cm);
+  return LocationFromContext(backtrace.Top(), uriBaseIds);
 }
 
-cm::optional<cmSarif::Stack> StackFromBacktrace(cmListFileBacktrace bt,
-                                                cmake const& cm)
+cm::optional<cmSarif::Stack> StackFromBacktrace(
+  cmListFileBacktrace bt,
+  std::vector<std::pair<cm::string_view, cm::string_view>> const&
+    uriBaseIds = {})
 {
   if (bt.Empty()) {
     return {};
@@ -85,7 +103,7 @@ cm::optional<cmSarif::Stack> StackFromBacktrace(cmListFileBacktrace bt,
 
   cmSarif::Stack stack;
   for (; !bt.Empty(); bt = bt.Pop()) {
-    cmSarif::Location topLocation = LocationFromContext(bt.Top(), cm);
+    cmSarif::Location topLocation = LocationFromContext(bt.Top(), uriBaseIds);
 
     // If the location doesn't have a specific region, this entry is a
     // placeholder and should not appear in the call stack.
@@ -248,6 +266,27 @@ bool cmCMakeSarifLogger::WriteFile(std::string const& path,
     return *result.first;
   };
 
+  // Make a prioritized list of base directories applicable in this context.
+  // This is used for normalizing the paths of related locations.
+  std::vector<std::pair<cm::string_view, cm::string_view>> uriBaseIds;
+
+  std::string const& binDir = this->CM.GetHomeOutputDirectory();
+  if (!binDir.empty()) {
+    uriBaseIds.emplace_back("CMAKE_BINARY_DIR", binDir);
+  }
+
+  std::string const& homeDir = this->CM.GetHomeDirectory();
+  if (!homeDir.empty()) {
+    uriBaseIds.emplace_back("CMAKE_SOURCE_DIR", homeDir);
+  }
+
+  // Log the base directories for this run.
+  for (auto const& base : uriBaseIds) {
+    run.OriginalUriBaseIds.emplace(
+      std::string(base.first),
+      cmSarif::ArtifactLocation{ cmStrCat("file://", base.second, "/"), "" });
+  }
+
   cmMessenger const& messenger = *this->CM.GetMessenger();
   for (auto const& message : messenger.GetDisplayedMessages()) {
     // SARIF should only emit diagnostic messages, not general messages/logs
@@ -267,9 +306,9 @@ bool cmCMakeSarifLogger::WriteFile(std::string const& path,
     result.RuleId = ruleInfo.first;
     result.RuleIndex = ruleInfo.second;
     result.Message = cmSarif::Message{ message.Text };
-    result.Location = LastLocation(message.Backtrace, this->CM);
+    result.Location = LastLocation(message.Backtrace, uriBaseIds);
     if (cm::optional<cmSarif::Stack> stack =
-          StackFromBacktrace(message.Backtrace, this->CM)) {
+          StackFromBacktrace(message.Backtrace, uriBaseIds)) {
       result.Stacks.emplace_back(std::move(*stack));
     }
     result.Level = SarifLevelFromMessageType(message.Type);

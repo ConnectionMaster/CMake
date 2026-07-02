@@ -3,6 +3,7 @@
 #include "cmSarif.h"
 
 #include <memory>
+#include <utility>
 
 #include <cm3p/json/value.h>
 #include <cm3p/json/writer.h>
@@ -181,11 +182,21 @@ Json::Value GetJson(Run const& run)
 {
   Json::Value runJson(Json::objectValue);
   runJson["tool"] = cmSarif::GetJson(run.Tool);
+
+  if (!run.OriginalUriBaseIds.empty()) {
+    Json::Value uriBaseIds(Json::objectValue);
+    for (auto const& base : run.OriginalUriBaseIds) {
+      uriBaseIds[base.first] = cmSarif::GetJson(base.second);
+    }
+    runJson["originalUriBaseIds"] = uriBaseIds;
+  }
+
   Json::Value results(Json::arrayValue);
   for (auto const& result : run.Results) {
     results.append(cmSarif::GetJson(result));
   }
   runJson["results"] = results;
+
   return runJson;
 }
 

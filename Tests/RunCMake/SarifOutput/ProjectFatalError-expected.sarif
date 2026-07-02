@@ -16,7 +16,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "ProjectFatalError.cmake",
-                  "uriBaseId": "PATH:<SOURCE_DIR>"
+                  "uriBaseId": "CMAKE_SOURCE_DIR"
                 },
                 "region": {
                   "startLine": 1
@@ -43,7 +43,7 @@
                     "physicalLocation": {
                       "artifactLocation": {
                         "uri": "ProjectFatalError.cmake",
-                        "uriBaseId": "PATH:<SOURCE_DIR>"
+                        "uriBaseId": "CMAKE_SOURCE_DIR"
                       },
                       "region": {
                         "startLine": 1
@@ -62,7 +62,7 @@
                     "physicalLocation": {
                       "artifactLocation": {
                         "uri": "CMakeLists.txt",
-                        "uriBaseId": "PATH:<SOURCE_DIR>"
+                        "uriBaseId": "CMAKE_SOURCE_DIR"
                       },
                       "region": {
                         "startLine": 3
@@ -75,6 +75,14 @@
           ]
         }
       ],
+      "originalUriBaseIds": {
+        "CMAKE_BINARY_DIR": {
+          "uri": "file://PATH:<BINARY_DIR>/"
+        },
+        "CMAKE_SOURCE_DIR": {
+          "uri": "file://PATH:<SOURCE_DIR>/"
+        }
+      },
       "tool": {
         "driver": {
           "name": "CMake",
