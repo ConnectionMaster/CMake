@@ -1042,28 +1042,29 @@ void cmGlobalFastbuildGenerator::AddCompiler(std::string const& language,
     if (cmSystemTools::VersionCompare(cmSystemTools::OP_GREATER_EQUAL,
                                       compilerDef.CmakeCompilerVersion,
                                       "19.20")) {
-      compilerDef.ExtraFiles.push_back("$Root$/c1.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/c1xx.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/c2.dll");
-      compilerDef.ExtraFiles.push_back(
+      compilerDef.ExtraFiles.reserve(compilerDef.ExtraFiles.size() + 16);
+      compilerDef.ExtraFiles.emplace_back("$Root$/c1.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/c1xx.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/c2.dll");
+      compilerDef.ExtraFiles.emplace_back(
         "$Root$/atlprov.dll"); // Only needed if using ATL
-      compilerDef.ExtraFiles.push_back("$Root$/msobj140.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/mspdb140.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/mspdbcore.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/mspdbsrv.exe");
-      compilerDef.ExtraFiles.push_back("$Root$/mspft140.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/msvcp140.dll");
-      compilerDef.ExtraFiles.push_back(
+      compilerDef.ExtraFiles.emplace_back("$Root$/msobj140.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/mspdb140.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/mspdbcore.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/mspdbsrv.exe");
+      compilerDef.ExtraFiles.emplace_back("$Root$/mspft140.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/msvcp140.dll");
+      compilerDef.ExtraFiles.emplace_back(
         "$Root$/msvcp140_atomic_wait.dll"); // Required circa 16.8.3
                                             // (14.28.29333)
-      compilerDef.ExtraFiles.push_back(
+      compilerDef.ExtraFiles.emplace_back(
         "$Root$/tbbmalloc.dll"); // Required as of 16.2 (14.22.27905)
-      compilerDef.ExtraFiles.push_back("$Root$/vcruntime140.dll");
-      compilerDef.ExtraFiles.push_back(
+      compilerDef.ExtraFiles.emplace_back("$Root$/vcruntime140.dll");
+      compilerDef.ExtraFiles.emplace_back(
         "$Root$/vcruntime140_1.dll"); // Required as of 16.5.1 (14.25.28610)
-      compilerDef.ExtraFiles.push_back(
+      compilerDef.ExtraFiles.emplace_back(
         cmStrCat("$Root$/", i18nNum, "/clui.dll"));
-      compilerDef.ExtraFiles.push_back(cmStrCat(
+      compilerDef.ExtraFiles.emplace_back(cmStrCat(
         "$Root$/", i18nNum, "/mspft140ui.dll")); // Localized messages for
                                                  // static analysis
     }
@@ -1071,19 +1072,20 @@ void cmGlobalFastbuildGenerator::AddCompiler(std::string const& language,
     else if (cmSystemTools::VersionCompare(cmSystemTools::OP_GREATER_EQUAL,
                                            compilerDef.CmakeCompilerVersion,
                                            "19.10")) {
-      compilerDef.ExtraFiles.push_back("$Root$/c1.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/c1xx.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/c2.dll");
-      compilerDef.ExtraFiles.push_back(
+      compilerDef.ExtraFiles.reserve(compilerDef.ExtraFiles.size() + 12);
+      compilerDef.ExtraFiles.emplace_back("$Root$/c1.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/c1xx.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/c2.dll");
+      compilerDef.ExtraFiles.emplace_back(
         "$Root$/atlprov.dll"); // Only needed if using ATL
-      compilerDef.ExtraFiles.push_back("$Root$/msobj140.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/mspdb140.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/mspdbcore.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/mspdbsrv.exe");
-      compilerDef.ExtraFiles.push_back("$Root$/mspft140.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/msvcp140.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/vcruntime140.dll");
-      compilerDef.ExtraFiles.push_back("$Root$/" + i18nNum + "/clui.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/msobj140.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/mspdb140.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/mspdbcore.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/mspdbsrv.exe");
+      compilerDef.ExtraFiles.emplace_back("$Root$/mspft140.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/msvcp140.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/vcruntime140.dll");
+      compilerDef.ExtraFiles.emplace_back("$Root$/" + i18nNum + "/clui.dll");
     }
   }
   // TODO: Handle Intel compiler
