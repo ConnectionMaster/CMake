@@ -2563,12 +2563,6 @@ int cmGlobalGenerator::Build(cmBuildArgs const& buildArgs,
     realConfig, buildArgs.jobs, buildArgs.verbose, buildOptions, nativeOptions,
     isInTryCompile);
 
-  // Workaround to convince some commands to produce output.
-  if (outputMode == cmSystemTools::OUTPUT_PASSTHROUGH &&
-      makeCommand.back().RequiresOutputForward) {
-    outputMode = cmSystemTools::OUTPUT_FORWARD;
-  }
-
   // should we do a clean first?
   if (buildOptions.Clean) {
     std::vector<GeneratedMakeCommand> cleanCommand =

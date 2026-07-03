@@ -99,7 +99,6 @@ struct GeneratedMakeCommand
   std::string QuotedPrintable() const;
 
   std::vector<std::string> PrimaryCommand;
-  bool RequiresOutputForward = false;
 };
 }
 namespace Json {
