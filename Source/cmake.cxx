@@ -2192,6 +2192,9 @@ bool cmake::SetArgsFromPreset(cmCMakePresetsConfigureArgs const& args,
     this->SetTraceFile(expandedPreset->TraceRedirect);
   }
 
+  // Store preset variables in case of cache reset.
+  this->InitialPresetVariables = this->UnprocessedPresetVariables;
+
   return true;
 }
 
@@ -2410,6 +2413,15 @@ int cmake::HandleDeleteCacheVariables(
   this->DeleteCache(this->GetHomeOutputDirectory());
   // load the empty cache
   this->LoadCache();
+#ifndef CMAKE_BOOTSTRAP
+  // Restore preset cache variables.
+  this->UnprocessedPresetVariables = this->InitialPresetVariables;
+  this->ProcessPresetVariables();
+#endif
+  // Restore command line cache variables (from this invocation cmake only).
+  bool resetArgsSuccess = this->SetCacheArgs(this->cmdArgs);
+  assert(resetArgsSuccess);
+  (void)resetArgsSuccess;
   // restore the changed compilers
   for (SaveCacheEntry const& i : saved) {
     this->AddCacheEntry(i.key, i.value, i.help, i.type);

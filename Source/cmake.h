@@ -806,6 +806,8 @@ private:
     UnprocessedPresetVariables;
   std::map<std::string, cm::optional<std::string>>
     UnprocessedPresetEnvironment;
+  std::map<std::string, cm::optional<cmCMakePresetsGraph::CacheVariable>>
+    InitialPresetVariables;
 #endif
 
 #if !defined(CMAKE_BOOTSTRAP)
