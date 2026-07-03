@@ -1,7 +1,4 @@
 cmake_minimum_required(VERSION 3.10)
-if(NOT RunCMake_TEST)
-  set(RunCMake_TEST "$ENV{RunCMake_TEST}") # needed when cache is deleted
-endif()
 if(RunCMake_TEST MATCHES "^ToolchainFromFile")
   # CMAKE_TOOLCHAIN_FILE should be set before project. The ToolchainFromFile
   # cases test detecting toolchain path changes between CMake invocations and

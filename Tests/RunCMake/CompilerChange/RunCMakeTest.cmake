@@ -27,12 +27,9 @@ configure_file(${ccIn} ${cc2} @ONLY)
 
 block()
   set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/ChangeCompiler-build)
-  set(ENV{RunCMake_TEST} "FirstCompiler")
   run_cmake_with_options(FirstCompiler -DCMAKE_C_COMPILER=${cc1})
   set(RunCMake_TEST_NO_CLEAN 1)
-  set(ENV{RunCMake_TEST} "SecondCompiler")
   run_cmake_with_options(SecondCompiler -DCMAKE_C_COMPILER=${cc2})
-  set(ENV{RunCMake_TEST} "EmptyCompiler")
   run_cmake_with_options(EmptyCompiler -DCMAKE_C_COMPILER=)
 endblock()
 
@@ -55,7 +52,6 @@ block()
   set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/ToolchainFromFile-build)
   run_cmake(ToolchainFromFile-step1)
   set(RunCMake_TEST_NO_CLEAN 1)
-  set(ENV{RunCMake_TEST} "ToolchainFromFile-step2")
   run_cmake(ToolchainFromFile-step2)
 endblock()
 
@@ -65,7 +61,6 @@ block()
   set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/ToolchainFromFileDeleted-build)
   run_cmake(ToolchainFromFileDeleted-step1)
   set(RunCMake_TEST_NO_CLEAN 1)
-  set(ENV{RunCMake_TEST} "ToolchainFromFileDeleted-step2")
   run_cmake(ToolchainFromFileDeleted-step2)
 endblock()
 
@@ -76,7 +71,6 @@ block()
     "-DCMAKE_TOOLCHAIN_FILE=${RunCMake_BINARY_DIR}/foo.cmake"
   )
   set(RunCMake_TEST_NO_CLEAN 1)
-  set(ENV{RunCMake_TEST} "ToolchainFromCmdline-step2")
   run_cmake_with_options(ToolchainFromCmdline-step2
     "-DCMAKE_TOOLCHAIN_FILE=${RunCMake_BINARY_DIR}/bar.cmake"
   )
