@@ -22,6 +22,7 @@
 #include "cmCryptoHash.h"
 #include "cmGeneratedFileStream.h"
 #include "cmInstrumentation.h"
+#include "cmInstrumentationInterrupt.h"
 #include "cmJSONState.h"
 #include "cmProcessOutput.h"
 #include "cmStringAlgorithms.h"
@@ -152,6 +153,14 @@ int cmInstallScriptHandler::Install(unsigned int j,
   std::function<void()> queueScripts;
   queueScripts = [&runners, &working, &installed, &i, &loop, j,
                   &queueScripts]() {
+    if (cmInstrumentationInterrupt::PendingInterruptSignal() != 0) {
+      // Interrupted (e.g. Ctrl+C): launch no further scripts.  In-flight
+      // children share the process group, receive the signal, and exit on
+      // their own, draining the event loop; queueScripts is the single
+      // re-entry point for launching, so guarding it here stops all remaining
+      // work without killing anything.
+      return;
+    }
     for (auto queue = std::min(j - working, runners.size() - i); queue > 0;
          --queue) {
       ++working;
@@ -173,10 +182,18 @@ int cmInstallScriptHandler::Install(unsigned int j,
   queueScripts();
   uv_run(loop, UV_RUN_DEFAULT);
 
+  // Aggregate child results.  When an interrupt stopped queueScripts, the
+  // runners beyond the dispatched prefix [0, i) were never started (they have
+  // a null process handle); those are "not run", not "failed", so exclude
+  // them.  With no interrupt every runner was dispatched and this inspects
+  // them all, matching the non-interrupt behavior exactly.
+  std::size_t const inspect =
+    cmInstrumentationInterrupt::PendingInterruptSignal() != 0 ? i
+                                                              : runners.size();
   int result = 0;
-  for (auto& runner : runners) {
-    if (runner.Failed()) {
-      runner.printFailure();
+  for (std::size_t k = 0; k < inspect; ++k) {
+    if (runners[k].Failed()) {
+      runners[k].printFailure();
       result = 1;
     }
   }
