@@ -12,6 +12,8 @@ function(instrument test)
     "INTERRUPT_SEAM"
     "INSTALL"
     "INSTALL_PARALLEL"
+    "INSTALL_SEAM"
+    "INSTALL_INTERRUPT"
     "TEST"
     "WORKFLOW"
     "COPY_QUERIES"
@@ -127,6 +129,11 @@ function(instrument test)
     list(APPEND ARGS_CONFIGURE_ARGS
       "-DINTERRUPT_BUILD_SRC=${RunCMake_SOURCE_DIR}/InterruptBuild.c")
   endif()
+  if (ARGS_INSTALL_INTERRUPT)
+    list(APPEND ARGS_CONFIGURE_ARGS
+      "-DINTERRUPT_BUILD_SRC=${RunCMake_SOURCE_DIR}/InterruptBuild.c"
+      "-DINSTALL_INTERRUPT=ON")
+  endif()
   set(RunCMake_TEST_SOURCE_DIR ${RunCMake_SOURCE_DIR}/project)
   if(NOT RunCMake_GENERATOR_IS_MULTI_CONFIG)
     set(maybe_CMAKE_BUILD_TYPE -DCMAKE_BUILD_TYPE=Debug)
@@ -200,7 +207,7 @@ function(instrument test)
     endif()
     set(helper ${helper_dir}/InterruptBuild${CMAKE_EXECUTABLE_SUFFIX})
     set(RunCMake_QUIET_ERROR 1)
-    run_cmake_command(${test}-build
+    run_cmake_command(${test}-signal
       ${helper} 3
       ${CMAKE_COMMAND} --build . --config Debug)
     unset(RunCMake_QUIET_ERROR)
@@ -221,7 +228,7 @@ function(instrument test)
     # and skips the hook.
     set(ENV{__CMAKE_INSTRUMENTATION_TEST_INTERRUPT} 2)
     set(RunCMake_TEST_EXPECT_RESULT 0)
-    run_cmake_command(${test}-build
+    run_cmake_command(${test}-seam
       ${CMAKE_COMMAND} --build . --config Debug)
     unset(RunCMake_TEST_EXPECT_RESULT)
     unset(ENV{__CMAKE_INSTRUMENTATION_TEST_INTERRUPT})
@@ -238,6 +245,63 @@ function(instrument test)
   endif()
   if (ARGS_INSTALL)
     run_cmake_command(${test}-install ${CMAKE_COMMAND} --install . --prefix install --config Debug)
+  endif()
+  if (ARGS_INSTALL_SEAM)
+    # Drive the cmakeInstall interrupt path deterministically via the test-only
+    # injection seam, with no OS signal, so it runs on every generator.  First
+    # install normally so the postCMakeInstall hook runs and creates its marker
+    # file; remove it (and the manifest) so their absence after the injected
+    # install proves that install's hook was skipped and left nothing complete.
+    set(RunCMake_QUIET_ERROR 1)
+    run_cmake_command(${test}-warmup
+      ${CMAKE_COMMAND} --install . --prefix install --config Debug)
+    file(REMOVE ${v1}/postCMakeInstall.hook)
+    file(REMOVE ${RunCMake_TEST_BINARY_DIR}/install_manifest.txt)
+
+    # Inject an interrupt (SIGINT == 2) via the undocumented test seam and
+    # install again; cmake exits with a non-zero status but writes the
+    # interrupted cmakeInstall snippet and skips the hook.
+    set(ENV{__CMAKE_INSTRUMENTATION_TEST_INTERRUPT} 2)
+    set(RunCMake_TEST_EXPECT_RESULT 1)
+    run_cmake_command(${test}-seam
+      ${CMAKE_COMMAND} --install . --prefix install --config Debug)
+    unset(RunCMake_TEST_EXPECT_RESULT)
+    unset(ENV{__CMAKE_INSTRUMENTATION_TEST_INTERRUPT})
+    unset(RunCMake_QUIET_ERROR)
+  endif()
+  if (ARGS_INSTALL_INTERRUPT)
+    # Build just the interrupt helper and main so the parallel install has
+    # something to do.  This build runs no postCMakeInstall hook (the query only
+    # requests that hook), so remove any stale marker; its absence after the
+    # interrupted install then proves that install's hook was skipped.
+    run_cmake_command(${test}-helper
+      ${CMAKE_COMMAND} --build . --config Debug --target InterruptBuild main)
+    file(REMOVE ${v1}/postCMakeBuild.hook)
+    file(REMOVE ${v1}/postCMakeInstall.hook)
+    file(REMOVE ${RunCMake_TEST_BINARY_DIR}/install_manifest.txt)
+
+    # Pin InstallScripts.json newest so the parallel install path is chosen
+    # deterministically (the staleness heuristic can otherwise fall back to
+    # serial on coarse-mtime filesystems).
+    file(TOUCH_NOCREATE ${RunCMake_TEST_BINARY_DIR}/CMakeFiles/InstallScripts.json)
+
+    # Run an instrumented parallel install and interrupt it after a few seconds,
+    # while a slow install script is still running and others are pending.
+    set(helper_dir ${RunCMake_TEST_BINARY_DIR})
+    if (RunCMake_GENERATOR_IS_MULTI_CONFIG)
+      set(helper_dir ${helper_dir}/Debug)
+    endif()
+    set(helper ${helper_dir}/InterruptBuild${CMAKE_EXECUTABLE_SUFFIX})
+    # Merge stdout/stderr: the parallel aggregation prints one "User interrupt"
+    # diagnostic per in-flight script to stderr, whose presence and count are
+    # cosmetic and race with the re-raise that terminates the process.
+    set(RunCMake_TEST_OUTPUT_MERGE 1)
+    set(RunCMake_QUIET_ERROR 1)
+    run_cmake_command(${test}-signal
+      ${helper} 3
+      ${CMAKE_COMMAND} --install . --prefix install --config Debug -j 1)
+    unset(RunCMake_QUIET_ERROR)
+    unset(RunCMake_TEST_OUTPUT_MERGE)
   endif()
   if (ARGS_TEST)
     run_cmake_command(${test}-test ${CMAKE_CTEST_COMMAND} . -C Debug)
@@ -266,8 +330,13 @@ if (INSTRUMENTATION_INTERRUPT_REAL)
   # console event and does not re-broadcast it to the runner; the other Windows
   # make-family generators are covered by the injection seam instead.
   if (NOT WIN32 OR RunCMake_GENERATOR MATCHES "Ninja")
-    instrument(interrupt INTERRUPT
+    instrument(interrupt-build INTERRUPT
       CHECK_SCRIPT check-interrupted.cmake
+    )
+    # Interrupt a parallel `cmake --install` with a real OS signal, proving the
+    # cooperative cancellation stops pending install scripts and skips the hook.
+    instrument(interrupt-install INSTALL_INTERRUPT
+      CHECK_SCRIPT check-installation-interrupted.cmake
     )
   endif()
   return()
@@ -476,12 +545,16 @@ if (NOT Skip_COMPILE_TRACE_QUERY_Case)
   endif()
 endif()
 
-# Test that interrupting `cmake --build` still writes the cmakeBuild snippet,
-# recording the interrupting signal.  This case uses the deterministic test
-# seam (no OS event).  The real OS-event counterpart runs in the separate
-# RunCMake.InstrumentationInterrupt suite.
-instrument(interrupt INTERRUPT_SEAM
+# Test that interrupting `cmake --build` or `cmake --install` still writes the
+# overall cmakeBuild/cmakeInstall snippet, recording the interrupting signal,
+# and skips the corresponding post-command hook.  These cases use the
+# deterministic test seam (no OS event); the real OS-event counterparts run in
+# the separate RunCMake.InstrumentationInterrupt suite.
+instrument(interrupt-build INTERRUPT_SEAM
   CHECK_SCRIPT check-interrupted.cmake
+)
+instrument(interrupt-install BUILD INSTALL_SEAM
+  CHECK_SCRIPT check-installation-interrupted.cmake
 )
 
 # Test make/ninja hooks

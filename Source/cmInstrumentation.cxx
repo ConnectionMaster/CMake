@@ -770,8 +770,8 @@ int cmInstrumentation::InstrumentCommand(
   // See SpawnBuildDaemon(); this data is currently meaningless for build.
   root["result"] = command_type == "build" ? Json::nullValue : ret;
 
-  // If the build was interrupted (e.g. by Ctrl+C), record the signal number
-  // that stopped it, so consumers can distinguish an interrupted build from
+  // If the command was interrupted (e.g. by Ctrl+C), record the signal number
+  // that stopped it, so consumers can distinguish an interrupted command from
   // one that ran to completion.  Omitted when no interrupt occurred; only a
   // command wrapped by HandleInterrupt can observe a pending signal here.
   int sig = cmInstrumentationInterrupt::PendingInterruptSignal();
@@ -840,14 +840,15 @@ int cmInstrumentation::InstrumentCommand(
       }
       this->configureSnippetData.clear();
     }
-    // Write the cmakeBuild envelope atomically (temp file + rename).  This is
-    // the snippet flushed while unwinding from a user interrupt, where a
-    // second Ctrl+C could otherwise truncate it mid-write; the atomic write
-    // guarantees it is either absent or complete.  Per-step snippets are never
-    // flushed under interrupt and are left non-atomic.
+    // Write the cmakeBuild/cmakeInstall envelope atomically (temp file +
+    // rename).  This is the snippet flushed while unwinding from a user
+    // interrupt, where a second Ctrl+C could otherwise truncate it mid-write;
+    // the atomic write guarantees it is either absent or complete.  Per-step
+    // snippets are never flushed under interrupt and are left non-atomic.
+    bool const atomicEnvelope =
+      command_type == "cmakeBuild" || command_type == "cmakeInstall";
     this->WriteInstrumentationJson(latestDataVersion, root, "data", file_name,
-                                   command_type == "cmakeBuild" ? Atomic::Yes
-                                                                : Atomic::No);
+                                   atomicEnvelope ? Atomic::Yes : Atomic::No);
   }
   return ret;
 }
