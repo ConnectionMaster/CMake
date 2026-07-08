@@ -108,7 +108,6 @@
 #    include "cmGlobalFastbuildGenerator.h"
 #    include "cmGlobalJOMMakefileGenerator.h"
 #    include "cmGlobalNMakeMakefileGenerator.h"
-#    include "cmGlobalVisualStudio14Generator.h"
 #    include "cmGlobalVisualStudioVersionedGenerator.h"
 #    include "cmVSSetupHelper.h"
 
@@ -2924,23 +2923,6 @@ std::unique_ptr<cmGlobalGenerator> cmake::EvaluateDefaultGlobalGenerator()
   std::string found;
   // Try to find the newest VS installed on the computer and
   // use that as a default if -G is not specified
-  std::string const vsregBase = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\";
-  static char const* const vsVariants[] = {
-    /* clang-format needs this comment to break after the opening brace */
-    "VisualStudio\\", "VCExpress\\", "WDExpress\\"
-  };
-  struct VSVersionedGenerator
-  {
-    char const* MSVersion;
-    char const* GeneratorName;
-  };
-  static VSVersionedGenerator const vsGenerators[] = {
-    { "14.0", "Visual Studio 14 2015" }, //
-  };
-  static char const* const vsEntries[] = {
-    "\\Setup\\VC;ProductDir", //
-    ";InstallDir"             //
-  };
   if (cmVSSetupAPIHelper(18).IsVSInstalled()) {
     found = "Visual Studio 18 2026";
   } else if (cmVSSetupAPIHelper(17).IsVSInstalled()) {
@@ -2949,23 +2931,6 @@ std::unique_ptr<cmGlobalGenerator> cmake::EvaluateDefaultGlobalGenerator()
     found = "Visual Studio 16 2019";
   } else if (cmVSSetupAPIHelper(15).IsVSInstalled()) {
     found = "Visual Studio 15 2017";
-  } else {
-    for (VSVersionedGenerator const* g = cm::cbegin(vsGenerators);
-         found.empty() && g != cm::cend(vsGenerators); ++g) {
-      for (char const* const* v = cm::cbegin(vsVariants);
-           found.empty() && v != cm::cend(vsVariants); ++v) {
-        for (char const* const* e = cm::cbegin(vsEntries);
-             found.empty() && e != cm::cend(vsEntries); ++e) {
-          std::string const reg = vsregBase + *v + g->MSVersion + *e;
-          std::string dir;
-          if (cmSystemTools::ReadRegistryValue(reg, dir,
-                                               cmSystemTools::KeyWOW64_32) &&
-              cmSystemTools::PathExists(dir)) {
-            found = g->GeneratorName;
-          }
-        }
-      }
-    }
   }
   auto gen = this->CreateGlobalGenerator(found);
   if (!gen) {
@@ -3395,7 +3360,6 @@ void cmake::AddDefaultGenerators()
     cmGlobalVisualStudioVersionedGenerator::NewFactory16());
   this->Generators.push_back(
     cmGlobalVisualStudioVersionedGenerator::NewFactory15());
-  this->Generators.push_back(cmGlobalVisualStudio14Generator::NewFactory());
   this->Generators.push_back(cmGlobalBorlandMakefileGenerator::NewFactory());
   this->Generators.push_back(cmGlobalNMakeMakefileGenerator::NewFactory());
   this->Generators.push_back(cmGlobalJOMMakefileGenerator::NewFactory());
@@ -4131,7 +4095,7 @@ int cmake::Build(cmBuildArgs buildArgs, std::vector<std::string> targets,
   // to limitations of the underlying build system.
   std::string const stampList =
     cmStrCat(cachePath, "/CMakeFiles/",
-             cmGlobalVisualStudio14Generator::GetGenerateStampList());
+             cmGlobalVisualStudioVersionedGenerator::GetGenerateStampList());
 
   // Note that the stampList file only exists for VS generators.
   if (cmSystemTools::FileExists(stampList) &&
