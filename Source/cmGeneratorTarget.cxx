@@ -836,10 +836,11 @@ bool cmGeneratorTarget::IsIPOEnabled(std::string const& lang,
 
   // Note: check consistency with messages from CheckIPOSupported
   char const* message = nullptr;
-  if (!this->Makefile->IsOn("_CMAKE_" + lang + "_IPO_SUPPORTED_BY_CMAKE")) {
+  if (!this->Makefile->IsOn(
+        cmStrCat("_CMAKE_", lang, "_IPO_SUPPORTED_BY_CMAKE"))) {
     message = "CMake doesn't support IPO for current compiler";
-  } else if (!this->Makefile->IsOn("_CMAKE_" + lang +
-                                   "_IPO_MAY_BE_SUPPORTED_BY_COMPILER")) {
+  } else if (!this->Makefile->IsOn(cmStrCat(
+               "_CMAKE_", lang, "_IPO_MAY_BE_SUPPORTED_BY_COMPILER"))) {
     message = "Compiler doesn't support IPO";
   } else if (!this->GlobalGenerator->IsIPOSupported()) {
     message = "CMake doesn't support IPO for current generator";
@@ -1219,19 +1220,18 @@ std::string const& cmGeneratorTarget::GetLocationForBuild() const
   location = this->GetDirectory(noConfig);
   cmValue cfgid = this->Makefile->GetDefinition("CMAKE_CFG_INTDIR");
   if (cfgid && (*cfgid != ".")) {
-    location += "/";
-    location += *cfgid;
+    location = cmStrCat(std::move(location), '/', *cfgid);
   }
 
   if (this->IsAppBundleOnApple()) {
     std::string macdir = this->BuildBundleDirectory("", "", FullLevel);
     if (!macdir.empty()) {
-      location += "/";
-      location += macdir;
+      location = cmStrCat(std::move(location), '/', macdir);
     }
   }
-  location += "/";
-  location += this->GetFullName("", cmStateEnums::RuntimeBinaryArtifact);
+  location =
+    cmStrCat(std::move(location), '/',
+             this->GetFullName("", cmStateEnums::RuntimeBinaryArtifact));
   return location;
 }
 
@@ -1359,7 +1359,7 @@ std::string cmGeneratorTarget::GetCompilePDBPath(
     dir = this->GetPDBDirectory(config);
   }
   if (!dir.empty()) {
-    dir += "/";
+    dir += '/';
   }
   return dir + name;
 }
@@ -1768,8 +1768,8 @@ std::string cmGeneratorTarget::GetFrameworkDirectory(
   fpath += (ext ? *ext : "framework");
   if (shouldAddFullLevel(level) &&
       !this->Makefile->PlatformIsAppleEmbedded()) {
-    fpath += "/Versions/";
-    fpath += this->GetFrameworkVersion();
+    fpath =
+      cmStrCat(std::move(fpath), "/Versions/", this->GetFrameworkVersion());
   }
   return fpath;
 }
@@ -1804,7 +1804,7 @@ std::string cmGeneratorTarget::GetInstallNameDirForBuildTree(
       } else {
         dir = this->GetDirectory(config);
       }
-      dir += "/";
+      dir += '/';
       return dir;
     }
   }
@@ -2702,8 +2702,8 @@ void cmGeneratorTarget::AddCUDAArchitectureFlags(cmBuildStep compileOrLink,
       default:
         this->Makefile->IssueMessage(
           MessageType::FATAL_ERROR,
-          "CUDA_ARCHITECTURES is empty for target \"" + this->GetName() +
-            "\".");
+          cmStrCat("CUDA_ARCHITECTURES is empty for target \"",
+                   this->GetName(), "\"."));
     }
   }
 
@@ -2795,8 +2795,8 @@ void cmGeneratorTarget::AddCUDAArchitectureFlagsImpl(cmBuildStep compileOrLink,
         } else {
           this->Makefile->IssueMessage(
             MessageType::FATAL_ERROR,
-            "Unknown CUDA architecture specifier \"" + std::string(specifier) +
-              "\".");
+            cmStrCat("Unknown CUDA architecture specifier \"", specifier,
+                     "\"."));
         }
       }
 
@@ -2907,7 +2907,7 @@ void cmGeneratorTarget::AddHIPArchitectureFlags(cmBuildStep compileOrLink,
   cmList options(arch);
 
   for (std::string& option : options) {
-    flags += " --offload-arch=" + option;
+    flags = cmStrCat(std::move(flags), " --offload-arch=", option);
   }
 }
 
@@ -2915,7 +2915,7 @@ void cmGeneratorTarget::AddRustTargetFlags(std::string& flags) const
 {
   cmValue const edition = this->GetProperty("Rust_EDITION");
   if (edition && !edition->empty()) {
-    flags += " --edition=" + *edition;
+    flags = cmStrCat(std::move(flags), " --edition=", *edition);
   }
 }
 
@@ -2926,7 +2926,7 @@ void cmGeneratorTarget::AddSwiftTargetFlags(std::string& flags) const
           cmSystemTools::OP_GREATER_EQUAL,
           this->Makefile->GetDefinition("CMAKE_Swift_COMPILER_VERSION"),
           "4.2")) {
-      flags += " -swift-version " + *version;
+      flags = cmStrCat(std::move(flags), " -swift-version ", *version);
     }
   }
 
@@ -2942,7 +2942,7 @@ void cmGeneratorTarget::AddSwiftTargetFlags(std::string& flags) const
       std::string const packageFlag =
         this->Makefile->GetSafeDefinition("CMAKE_Swift_PACKAGE_NAME_FLAG");
       // Add the package name to the flags
-      flags += " " + packageFlag + " " + packageName;
+      flags = cmStrCat(std::move(flags), ' ', packageFlag, ' ', packageName);
     }
   }
 }
@@ -2962,9 +2962,9 @@ void cmGeneratorTarget::AddCUDAToolkitFlags(std::string& flags) const
       this->Makefile->GetSafeDefinition("CMAKE_CUDA_COMPILER_LIBRARY_ROOT");
 
     if (!toolkitRoot.empty()) {
-      flags += " --cuda-path=" +
-        this->LocalGenerator->ConvertToOutputFormat(toolkitRoot,
-                                                    cmOutputConverter::SHELL);
+      flags = cmStrCat(std::move(flags), " --cuda-path=",
+                       this->LocalGenerator->ConvertToOutputFormat(
+                         toolkitRoot, cmOutputConverter::SHELL));
     }
   }
 }
@@ -3812,17 +3812,18 @@ cmGeneratorTarget::Names cmGeneratorTarget::GetLibraryNames(
   if (this->IsFrameworkOnApple()) {
     targetNames.Real = components.prefix;
     if (!this->Makefile->PlatformIsAppleEmbedded()) {
-      targetNames.Real +=
-        cmStrCat("Versions/", this->GetFrameworkVersion(), '/');
+      targetNames.Real = cmStrCat(std::move(targetNames.Real), "Versions/",
+                                  this->GetFrameworkVersion(), '/');
     }
-    targetNames.Real += cmStrCat(targetNames.Base, components.suffix);
+    targetNames.Real = cmStrCat(std::move(targetNames.Real), targetNames.Base,
+                                components.suffix);
     targetNames.SharedObject = targetNames.Real;
   } else if (this->IsArchivedAIXSharedLibrary()) {
     targetNames.SharedObject =
       cmStrCat(components.prefix, targetNames.Base, ".so");
     if (soversion) {
-      targetNames.SharedObject += ".";
-      targetNames.SharedObject += *soversion;
+      targetNames.SharedObject =
+        cmStrCat(std::move(targetNames.SharedObject), '.', *soversion);
     }
     targetNames.Real = targetNames.Output;
   } else {
@@ -3849,11 +3850,13 @@ cmGeneratorTarget::Names cmGeneratorTarget::GetLibraryNames(
     if (this->IsFrameworkOnApple() && this->IsSharedLibraryWithExports()) {
       targetNames.ImportReal = components.prefix;
       if (!this->Makefile->PlatformIsAppleEmbedded()) {
-        targetNames.ImportReal +=
-          cmStrCat("Versions/", this->GetFrameworkVersion(), '/');
+        targetNames.ImportReal =
+          cmStrCat(std::move(targetNames.ImportReal), "Versions/",
+                   this->GetFrameworkVersion(), '/');
       }
-      targetNames.ImportReal +=
-        cmStrCat(importComponents.base, importComponents.suffix);
+      targetNames.ImportReal =
+        cmStrCat(std::move(targetNames.ImportReal), importComponents.base,
+                 importComponents.suffix);
       targetNames.ImportLibrary = targetNames.ImportOutput;
     } else {
       // The import library's soname.
@@ -3922,8 +3925,7 @@ cmGeneratorTarget::Names cmGeneratorTarget::GetExecutableNames(
   targetNames.Real = targetNames.Output;
 #endif
   if (version) {
-    targetNames.Real += "-";
-    targetNames.Real += *version;
+    targetNames.Real = cmStrCat(std::move(targetNames.Real), '-', *version);
   }
 #if defined(__CYGWIN__)
   targetNames.Real += components.suffix;
@@ -4063,8 +4065,7 @@ cmGeneratorTarget::GetFullNameInternalComponents(
         (dllProp.IsOn() ||
          (!dllProp.IsSet() &&
           this->Makefile->IsOn("CMAKE_SHARED_LIBRARY_NAME_WITH_VERSION")))) {
-      outBase += "-";
-      outBase += *soversion;
+      outBase = cmStrCat(std::move(outBase), '-', *soversion);
     }
   }
 
@@ -4619,10 +4620,11 @@ std::string cmGeneratorTarget::ComputeVersionedName(std::string const& prefix,
 {
   std::string vName = this->IsApple() ? (prefix + base) : name;
   if (version) {
-    vName += ".";
-    vName += *version;
+    vName = cmStrCat(std::move(vName), '.', *version);
   }
-  vName += this->IsApple() ? suffix : std::string();
+  if (this->IsApple()) {
+    vName += suffix;
+  }
   return vName;
 }
 
@@ -5122,31 +5124,30 @@ bool cmGeneratorTarget::GetConfigCommonSourceFilesForXcode(
       std::string firstConfigFiles;
       char const* sep = "";
       for (cmSourceFile* f : files) {
-        firstConfigFiles += sep;
-        firstConfigFiles += f->ResolveFullPath();
+        firstConfigFiles =
+          cmStrCat(std::move(firstConfigFiles), sep, f->ResolveFullPath());
         sep = "\n  ";
       }
 
       std::string thisConfigFiles;
       sep = "";
       for (cmSourceFile* f : configFiles) {
-        thisConfigFiles += sep;
-        thisConfigFiles += f->ResolveFullPath();
+        thisConfigFiles =
+          cmStrCat(std::move(thisConfigFiles), sep, f->ResolveFullPath());
         sep = "\n  ";
       }
-      std::ostringstream e;
       /* clang-format off */
-      e << "Target \"" << this->GetName()
-        << "\" has source files which vary by "
-        "configuration. This is not supported by the \""
-        << this->GlobalGenerator->GetName()
-        << "\" generator.\n"
-          "Config \"" << firstConfig << "\":\n"
-          "  " << firstConfigFiles << "\n"
-          "Config \"" << *it << "\":\n"
-          "  " << thisConfigFiles << "\n";
+      std::string e = cmStrCat("Target \"", this->GetName(),
+        "\" has source files which vary by "
+        "configuration. This is not supported by the \"",
+         this->GlobalGenerator->GetName(),
+         "\" generator.\n"
+          "Config \"", firstConfig, "\":\n"
+          "  ", firstConfigFiles, "\n"
+          "Config \"", *it, "\":\n"
+          "  ", thisConfigFiles, '\n');
       /* clang-format on */
-      this->LocalGenerator->IssueMessage(MessageType::FATAL_ERROR, e.str());
+      this->LocalGenerator->IssueMessage(MessageType::FATAL_ERROR, e);
       return false;
     }
   }

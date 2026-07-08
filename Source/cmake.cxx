@@ -3839,9 +3839,10 @@ int cmake::GetSystemInformation(std::vector<std::string>& args)
       return 1;
     }
     std::vector<std::string> args2;
-    args2.push_back(args[0]);
-    args2.push_back(destPath);
-    args2.push_back("-DRESULT_FILE=" + resultFile);
+    args2.reserve(3);
+    args2.emplace_back(args[0]);
+    args2.emplace_back(destPath);
+    args2.emplace_back("-DRESULT_FILE=" + resultFile);
     int res = this->Run(args2, false);
 
     if (res != 0) {

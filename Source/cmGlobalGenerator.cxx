@@ -94,7 +94,8 @@ std::string GeneratedMakeCommand::QuotedPrintable() const
   flags |= cmOutputConverter::Shell_Flag_IsUnix;
 #endif
   for (auto const& arg : this->PrimaryCommand) {
-    output += cmStrCat(sep, cmOutputConverter::EscapeForShell(arg, flags));
+    output = cmStrCat(std::move(output), sep,
+                      cmOutputConverter::EscapeForShell(arg, flags));
     sep = " ";
   }
   return output;
@@ -285,7 +286,6 @@ void cmGlobalGenerator::ResolveLanguageCompiler(std::string const& lang,
     cname = cmValue(cnameArgList.front());
   }
 
-  std::string changeVars;
   if (cname && !optional) {
     cmCMakePath cachedPath;
     if (!cmSystemTools::FileIsFullPath(*cname)) {
@@ -661,17 +661,18 @@ void cmGlobalGenerator::EnableLanguage(
   bool fatalError = false;
 
   mf->AddDefinitionBool("RUN_CONFIGURE", true);
-  std::string rootBin =
-    cmStrCat(this->CMakeInstance->GetHomeOutputDirectory(), "/CMakeFiles");
+  std::string rootBin;
 
   // If the configuration files path has been set,
   // then we are in a try compile and need to copy the enable language
   // files from the parent cmake bin dir, into the try compile bin dir
   if (!this->ConfiguredFilesPath.empty()) {
     rootBin = this->ConfiguredFilesPath;
+  } else {
+    rootBin =
+      cmStrCat(this->CMakeInstance->GetHomeOutputDirectory(), "/CMakeFiles");
   }
-  rootBin += '/';
-  rootBin += cmVersion::GetCMakeVersion();
+  rootBin = cmStrCat(std::move(rootBin), '/', cmVersion::GetCMakeVersion());
 
   // set the dir for parent files so they can be used by modules
   mf->AddDefinition("CMAKE_PLATFORM_INFO_DIR", rootBin);
@@ -2436,9 +2437,8 @@ void cmGlobalGenerator::CheckTargetProperties()
   if (!notFoundMap.empty()) {
     std::string notFoundVars;
     for (auto const& notFound : notFoundMap) {
-      notFoundVars += notFound.first;
-      notFoundVars += notFound.second;
-      notFoundVars += '\n';
+      notFoundVars = cmStrCat(std::move(notFoundVars), notFound.first,
+                              notFound.second, '\n');
     }
     cmSystemTools::Error(
       cmStrCat("The following variables are used in this project, "
@@ -3161,14 +3161,14 @@ void cmGlobalGenerator::AddGlobalTarget_Package(
   gti.UsesTerminal = true;
   gti.WorkingDir = mf->GetCurrentBinaryDirectory();
   cmCustomCommandLine singleLine;
-  singleLine.push_back(cmSystemTools::GetCPackCommand());
+  singleLine.emplace_back(cmSystemTools::GetCPackCommand());
   if (cmNonempty(cmakeCfgIntDir) && cmakeCfgIntDir[0] != '.') {
-    singleLine.push_back("-C");
-    singleLine.push_back(cmakeCfgIntDir);
+    singleLine.emplace_back("-C");
+    singleLine.emplace_back(cmakeCfgIntDir);
   }
-  singleLine.push_back("--config");
-  singleLine.push_back("./CPackConfig.cmake");
-  gti.CommandLines.push_back(std::move(singleLine));
+  singleLine.emplace_back("--config");
+  singleLine.emplace_back("./CPackConfig.cmake");
+  gti.CommandLines.emplace_back(std::move(singleLine));
   if (this->GetPreinstallTargetName()) {
     gti.Depends.emplace_back(this->GetPreinstallTargetName());
   } else {
@@ -3178,7 +3178,7 @@ void cmGlobalGenerator::AddGlobalTarget_Package(
       gti.Depends.emplace_back(this->GetAllTargetName());
     }
   }
-  targets.push_back(std::move(gti));
+  targets.emplace_back(std::move(gti));
 }
 
 void cmGlobalGenerator::AddGlobalTarget_PackageSource(
@@ -3210,11 +3210,11 @@ void cmGlobalGenerator::AddGlobalTarget_PackageSource(
   gti.WorkingDir = mf->GetCurrentBinaryDirectory();
   gti.UsesTerminal = true;
   cmCustomCommandLine singleLine;
-  singleLine.push_back(cmSystemTools::GetCPackCommand());
-  singleLine.push_back("--config");
-  singleLine.push_back("./CPackSourceConfig.cmake");
-  gti.CommandLines.push_back(std::move(singleLine));
-  targets.push_back(std::move(gti));
+  singleLine.emplace_back(cmSystemTools::GetCPackCommand());
+  singleLine.emplace_back("--config");
+  singleLine.emplace_back("./CPackSourceConfig.cmake");
+  gti.CommandLines.emplace_back(std::move(singleLine));
+  targets.emplace_back(std::move(gti));
 }
 
 void cmGlobalGenerator::AddGlobalTarget_Test(
@@ -3247,21 +3247,21 @@ void cmGlobalGenerator::AddGlobalTarget_Test(
     }
   }
   cmCustomCommandLine singleLine;
-  singleLine.push_back(cmSystemTools::GetCTestCommand());
+  singleLine.emplace_back(cmSystemTools::GetCTestCommand());
   cmList args(mf->GetDefinition("CMAKE_CTEST_ARGUMENTS"));
   for (auto const& arg : args) {
-    singleLine.push_back(arg);
+    singleLine.emplace_back(arg);
   }
   if (cmNonempty(cmakeCfgIntDir) && cmakeCfgIntDir[0] != '.') {
-    singleLine.push_back("-C");
-    singleLine.push_back(cmakeCfgIntDir);
+    singleLine.emplace_back("-C");
+    singleLine.emplace_back(cmakeCfgIntDir);
   } else // TODO: This is a hack. Should be something to do with the
          // generator
   {
-    singleLine.push_back("$(ARGS)");
+    singleLine.emplace_back("$(ARGS)");
   }
-  gti.CommandLines.push_back(std::move(singleLine));
-  targets.push_back(std::move(gti));
+  gti.CommandLines.emplace_back(std::move(singleLine));
+  targets.emplace_back(std::move(gti));
 }
 
 void cmGlobalGenerator::ReserveGlobalTargetCodegen()
@@ -3315,29 +3315,29 @@ void cmGlobalGenerator::AddGlobalTarget_EditCache(
   // Use generator preference for the edit_cache rule if it is defined.
   std::string edit_cmd = this->GetEditCacheCommand();
   if (!edit_cmd.empty()) {
-    singleLine.push_back(std::move(edit_cmd));
+    singleLine.emplace_back(std::move(edit_cmd));
     if (this->GetCMakeInstance()->GetIgnoreCompileWarningAsError()) {
-      singleLine.push_back("--compile-no-warning-as-error");
+      singleLine.emplace_back("--compile-no-warning-as-error");
     }
     if (this->GetCMakeInstance()->GetIgnoreLinkWarningAsError()) {
-      singleLine.push_back("--link-no-warning-as-error");
+      singleLine.emplace_back("--link-no-warning-as-error");
     }
-    singleLine.push_back("-S$(CMAKE_SOURCE_DIR)");
-    singleLine.push_back("-B$(CMAKE_BINARY_DIR)");
+    singleLine.emplace_back("-S$(CMAKE_SOURCE_DIR)");
+    singleLine.emplace_back("-B$(CMAKE_BINARY_DIR)");
     gti.Message = "Running CMake cache editor...";
     gti.UsesTerminal = true;
   } else {
-    singleLine.push_back(cmSystemTools::GetCMakeCommand());
-    singleLine.push_back("-E");
-    singleLine.push_back("echo");
-    singleLine.push_back("No interactive CMake dialog available.");
+    singleLine.emplace_back(cmSystemTools::GetCMakeCommand());
+    singleLine.emplace_back("-E");
+    singleLine.emplace_back("echo");
+    singleLine.emplace_back("No interactive CMake dialog available.");
     gti.Message = "No interactive CMake dialog available...";
     gti.UsesTerminal = false;
     gti.StdPipesUTF8 = true;
   }
-  gti.CommandLines.push_back(std::move(singleLine));
+  gti.CommandLines.emplace_back(std::move(singleLine));
 
-  targets.push_back(std::move(gti));
+  targets.emplace_back(std::move(gti));
 }
 
 void cmGlobalGenerator::AddGlobalTarget_RebuildCache(
@@ -3353,19 +3353,19 @@ void cmGlobalGenerator::AddGlobalTarget_RebuildCache(
   gti.UsesTerminal = true;
   gti.PerConfig = cmTarget::PerConfig::No;
   cmCustomCommandLine singleLine;
-  singleLine.push_back(cmSystemTools::GetCMakeCommand());
-  singleLine.push_back("--regenerate-during-build");
+  singleLine.emplace_back(cmSystemTools::GetCMakeCommand());
+  singleLine.emplace_back("--regenerate-during-build");
   if (this->GetCMakeInstance()->GetIgnoreCompileWarningAsError()) {
-    singleLine.push_back("--compile-no-warning-as-error");
+    singleLine.emplace_back("--compile-no-warning-as-error");
   }
   if (this->GetCMakeInstance()->GetIgnoreLinkWarningAsError()) {
-    singleLine.push_back("--link-no-warning-as-error");
+    singleLine.emplace_back("--link-no-warning-as-error");
   }
-  singleLine.push_back("-S$(CMAKE_SOURCE_DIR)");
-  singleLine.push_back("-B$(CMAKE_BINARY_DIR)");
-  gti.CommandLines.push_back(std::move(singleLine));
+  singleLine.emplace_back("-S$(CMAKE_SOURCE_DIR)");
+  singleLine.emplace_back("-B$(CMAKE_BINARY_DIR)");
+  gti.CommandLines.emplace_back(std::move(singleLine));
   gti.StdPipesUTF8 = true;
-  targets.push_back(std::move(gti));
+  targets.emplace_back(std::move(gti));
 }
 
 void cmGlobalGenerator::AddGlobalTarget_Install(
@@ -3432,10 +3432,10 @@ void cmGlobalGenerator::AddGlobalTarget_Install(
       }
       singleLine.push_back(cfgArg);
     }
-    singleLine.push_back("-P");
-    singleLine.push_back("cmake_install.cmake");
-    gti.CommandLines.push_back(singleLine);
-    targets.push_back(gti);
+    singleLine.emplace_back("-P");
+    singleLine.emplace_back("cmake_install.cmake");
+    gti.CommandLines.emplace_back(singleLine);
+    targets.emplace_back(gti);
 
     // install_local
     if (char const* install_local = this->GetInstallLocalTargetName()) {
@@ -4160,8 +4160,7 @@ std::string cmGlobalGenerator::EscapeJSON(std::string const& s)
     switch (i) {
       case '"':
       case '\\':
-        result += '\\';
-        result += i;
+        result = cmStrCat(std::move(result), '\\', i);
         break;
       case '\n':
         result += "\\n";
