@@ -42,7 +42,7 @@ function(install_test test)
     endif()
     set(INSTALL_MANIFEST ${RunCMake_TEST_BINARY_DIR}/${INSTALL_MANIFEST})
     set(RunCMake-check-file check-manifest.cmake)
-    run_cmake_command(${test}-install ${CMAKE_COMMAND} -E env --unset=NINJA_STATUS ${CMAKE_COMMAND} --install . ${ARGS_ARGS})
+    run_cmake_command(${test}-install ${CMAKE_COMMAND} --install . ${ARGS_ARGS})
     unset(RunCMake-check-file)
   endif()
 endfunction()
@@ -75,19 +75,7 @@ function(install_fail_test test fixture)
   endif()
   run_cmake(${fixture})
   set(RunCMake_TEST_NO_CLEAN 1)
-  if (ARG_PARALLEL)
-    # The install runs in parallel only when CMakeFiles/InstallScripts.json is
-    # at least as new as CMakeFiles/cmake.check_cache; otherwise the handler
-    # falls back to running the top-level cmake_install.cmake serially.  Both
-    # files are written during the same configuration, and their relative
-    # modification times are not reliable on every filesystem, so make the JSON
-    # newest explicitly to keep this test from intermittently exercising the
-    # serial fallback (which omits the per-script parallel diagnostics).
-    file(TOUCH_NOCREATE
-      ${RunCMake_TEST_BINARY_DIR}/CMakeFiles/InstallScripts.json)
-  endif()
   run_cmake_command(${test}
-    ${CMAKE_COMMAND} -E env --unset=NINJA_STATUS
     ${CMAKE_COMMAND} --install . ${ARG_INSTALL_ARGS})
 endfunction()
 
@@ -100,3 +88,31 @@ install_fail_test(serial-fatal install-fail FAIL_MODE fatal)
 # by a later success (and the later component is not installed).
 install_fail_test(serial-mask install-component-mask
   INSTALL_ARGS --component comp_fail --component comp_ok)
+
+# The stale-index guard exercised by out-of-date-json above must be
+# recoverable: once CMakeFiles/InstallScripts.json looks older than
+# CMakeFiles/cmake.check_cache, a reconfigure rewrites both files in one
+# generate step so the install runs in parallel again.  The handler compares
+# their modification times at whole-second resolution, so the freshly generated
+# index is not spuriously demoted to the serial fallback on filesystems that
+# commit the two configure-time writes out of order within a second.
+function(reconfigure_parallel_test test)
+  set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/${test}-install)
+  set(RunCMake_TEST_OPTIONS -DINSTALL_PARALLEL=ON -DCMAKE_INSTALL_PREFIX=install)
+  set(RunCMake_TEST_OUTPUT_MERGE 1)
+  if (NOT RunCMake_GENERATOR_IS_MULTI_CONFIG)
+    list(APPEND RunCMake_TEST_OPTIONS -DCMAKE_BUILD_TYPE=Debug)
+  endif()
+  run_cmake(install)
+  set(RunCMake_TEST_NO_CLEAN 1)
+  run_cmake_command(${test}-sleep ${CMAKE_COMMAND} -E sleep 2)
+  run_cmake_command(${test}-touch
+    ${CMAKE_COMMAND} -E touch ${RunCMake_TEST_BINARY_DIR}/CMakeFiles/cmake.check_cache)
+  run_cmake_command(${test}-reconfigure ${CMAKE_COMMAND} .)
+  set(INSTALL_MANIFEST ${RunCMake_TEST_BINARY_DIR}/install_manifest.txt)
+  set(INSTALL_COUNT 5)
+  set(RunCMake-check-file check-manifest.cmake)
+  run_cmake_command(${test}-install ${CMAKE_COMMAND} --install .)
+  unset(RunCMake-check-file)
+endfunction()
+reconfigure_parallel_test(out-of-date-json-reconfigure)

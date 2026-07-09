@@ -65,13 +65,20 @@ cmInstallScriptHandler::cmInstallScriptHandler(
     this->Directories.push_back(cmSystemTools::GetFilenamePath(script));
   };
 
-  int compare = 1;
+  // Trust the parallel install index unless the cache marker is newer.  Both
+  // files are written back-to-back while generating this build tree, so any
+  // ordering between them lives in a sub-second window that some filesystems
+  // (e.g. NFS on AIX) do not resolve by write time.  Compare at whole-second
+  // resolution: a genuinely stale index left by an older CMake reconfigure is
+  // always at least a configure run (seconds) older, while the sub-second
+  // jitter of a single generate step is ignored.
+  bool indexIsFresh = false;
   if (cmSystemTools::FileExists(file)) {
-    cmSystemTools::FileTimeCompare(
-      cmStrCat(this->BinaryDir, "/CMakeFiles/cmake.check_cache"), file,
-      &compare);
+    long int const cacheTime = cmSystemTools::ModifiedTime(
+      cmStrCat(this->BinaryDir, "/CMakeFiles/cmake.check_cache"));
+    indexIsFresh = cacheTime <= cmSystemTools::ModifiedTime(file);
   }
-  if (compare < 1) {
+  if (indexIsFresh) {
     Json::CharReaderBuilder rbuilder;
     auto jsonReader =
       std::unique_ptr<Json::CharReader>(rbuilder.newCharReader());
