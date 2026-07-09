@@ -78,12 +78,6 @@ bool cmTargetLinkLibrariesCommand(std::vector<std::string> const& args,
 
   cmMakefile& mf = status.GetMakefile();
 
-  // Alias targets cannot be on the LHS of this command.
-  if (mf.IsAlias(args[0])) {
-    status.SetError("can not be used on an ALIAS target.");
-    return false;
-  }
-
   // Lookup the target for which libraries are specified.
   cmTarget* target = mf.GetGlobalGenerator()->FindTarget(args[0]);
   if (!target) {
