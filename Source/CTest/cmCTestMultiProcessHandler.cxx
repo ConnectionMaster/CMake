@@ -1650,14 +1650,6 @@ bool cmCTestMultiProcessHandler::CheckGeneratedResourceSpec()
         return false;
       }
 
-      if (!cmSystemTools::FileIsFullPath(
-            test.second->GeneratedResourceSpecFile)) {
-        cmCTestLog(this->CTest, ERROR_MESSAGE,
-                   "GENERATED_RESOURCE_SPEC_FILE must be an absolute path"
-                     << std::endl);
-        return false;
-      }
-
       this->ResourceSpecSetupTest = test.first;
       this->ResourceSpecSetupFixture = *test.second->FixturesSetup.begin();
     }
