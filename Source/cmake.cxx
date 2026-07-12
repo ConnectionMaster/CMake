@@ -4386,6 +4386,15 @@ int cmake::Workflow(cmCMakePresetsWorkflowArgs const& args)
     }
   };
 
+  auto buildPresetCommand = [&args](std::vector<std::string> cmd,
+                                    std::string const& presetName) {
+    cmd.insert(cmd.end(), { "--preset", presetName });
+    if (!args.PresetsFile.empty()) {
+      cmd.insert(cmd.end(), { "--presets-file", args.PresetsFile });
+    }
+    return cmd;
+  };
+
   std::vector<CalculatedStep> steps;
   steps.reserve(expandedPreset->Steps.size());
   int stepNumber = 1;
@@ -4399,9 +4408,8 @@ int cmake::Workflow(cmCMakePresetsWorkflowArgs const& args)
         if (!configurePreset) {
           return 1;
         }
-        std::vector<std::string> configureCmdArgs{
-          cmSystemTools::GetCMakeCommand(), "--preset", step.PresetName
-        };
+        std::vector<std::string> configureCmdArgs = buildPresetCommand(
+          { cmSystemTools::GetCMakeCommand() }, step.PresetName);
         if (args.Fresh) {
           configureCmdArgs.emplace_back("--fresh");
         }
@@ -4414,10 +4422,10 @@ int cmake::Workflow(cmCMakePresetsWorkflowArgs const& args)
         if (!buildPreset) {
           return 1;
         }
-        steps.emplace_back(
-          stepNumber, "build"_s, step.PresetName,
-          buildWorkflowStep({ cmSystemTools::GetCMakeCommand(), "--build",
-                              "--preset", step.PresetName }));
+        std::vector<std::string> buildCmdArgs = buildPresetCommand(
+          { cmSystemTools::GetCMakeCommand(), "--build" }, step.PresetName);
+        steps.emplace_back(stepNumber, "build"_s, step.PresetName,
+                           buildWorkflowStep(buildCmdArgs));
       } break;
       case cmCMakePresetsGraph::WorkflowPreset::WorkflowStep::Type::Test: {
         auto const* testPreset = this->FindPresetForWorkflow(
@@ -4425,10 +4433,10 @@ int cmake::Workflow(cmCMakePresetsWorkflowArgs const& args)
         if (!testPreset) {
           return 1;
         }
-        steps.emplace_back(
-          stepNumber, "test"_s, step.PresetName,
-          buildWorkflowStep({ cmSystemTools::GetCTestCommand(), "--preset",
-                              step.PresetName }));
+        std::vector<std::string> testCmdArgs = buildPresetCommand(
+          { cmSystemTools::GetCTestCommand() }, step.PresetName);
+        steps.emplace_back(stepNumber, "test"_s, step.PresetName,
+                           buildWorkflowStep(testCmdArgs));
       } break;
       case cmCMakePresetsGraph::WorkflowPreset::WorkflowStep::Type::Package: {
         auto const* packagePreset = this->FindPresetForWorkflow(
@@ -4436,10 +4444,10 @@ int cmake::Workflow(cmCMakePresetsWorkflowArgs const& args)
         if (!packagePreset) {
           return 1;
         }
-        steps.emplace_back(
-          stepNumber, "package"_s, step.PresetName,
-          buildWorkflowStep({ cmSystemTools::GetCPackCommand(), "--preset",
-                              step.PresetName }));
+        std::vector<std::string> packageCmdArgs = buildPresetCommand(
+          { cmSystemTools::GetCPackCommand() }, step.PresetName);
+        steps.emplace_back(stepNumber, "package"_s, step.PresetName,
+                           buildWorkflowStep(packageCmdArgs));
       } break;
     }
     stepNumber++;
