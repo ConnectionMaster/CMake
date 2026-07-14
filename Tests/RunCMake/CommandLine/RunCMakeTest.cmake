@@ -1118,6 +1118,7 @@ unset(RunCMake_TEST_OPTIONS)
 
 set(RunCMake_TEST_OPTIONS -Wno-deprecated -Wuninitialized)
 run_cmake(Wuninitialized)
+run_cmake(WuninitializedCMakeRoot)
 unset(RunCMake_TEST_OPTIONS)
 
 run_cmake_command(W_bad-arg1 ${CMAKE_COMMAND} -B DummyBuildDir -W)
