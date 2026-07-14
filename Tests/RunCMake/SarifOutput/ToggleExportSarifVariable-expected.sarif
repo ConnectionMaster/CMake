@@ -4,7 +4,7 @@
     {
       "results": [
         {
-          "level": "error",
+          "level": "warning",
           "locations": [
             {
               "logicalLocations": [
@@ -15,19 +15,19 @@
               ],
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "ProjectFatalError.cmake",
+                  "uri": "ToggleExportSarifVariable.cmake",
                   "uriBaseId": "CMAKE_SOURCE_DIR"
                 },
                 "region": {
-                  "startLine": 1
+                  "startLine": 2
                 }
               }
             }
           ],
           "message": {
-            "text": "Example error"
+            "text": "Example warning message"
           },
-          "ruleId": "CMake.FatalError",
+          "ruleId": "CMake.Warning",
           "ruleIndex": 0,
           "stacks": [
             {
@@ -42,11 +42,11 @@
                     ],
                     "physicalLocation": {
                       "artifactLocation": {
-                        "uri": "ProjectFatalError.cmake",
+                        "uri": "ToggleExportSarifVariable.cmake",
                         "uriBaseId": "CMAKE_SOURCE_DIR"
                       },
                       "region": {
-                        "startLine": 1
+                        "startLine": 2
                       }
                     }
                   }
@@ -88,8 +88,8 @@
           "name": "CMake",
           "rules": [
             {
-              "id": "CMake.FatalError",
-              "name": "CMake Error"
+              "id": "CMake.Warning",
+              "name": "CMake Warning"
             }
           ],
           "version": "<IGNORE>"
