@@ -861,6 +861,21 @@ set_tests_properties(test5 PROPERTIES  SKIP_REGULAR_EXPRESSION \"please skip\")
 endfunction()
 run_output_junit()
 
+function(run_output_junit_invalid)
+  set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/output-junit-invalid)
+  set(RunCMake_TEST_NO_CLEAN 1)
+  file(REMOVE_RECURSE "${RunCMake_TEST_BINARY_DIR}")
+  file(MAKE_DIRECTORY "${RunCMake_TEST_BINARY_DIR}")
+  file(WRITE "${RunCMake_TEST_BINARY_DIR}/CTestTestfile.cmake" "
+add_test(test1 \"${CMAKE_COMMAND}\" -E true)
+")
+  set(output_dir "${RunCMake_TEST_BINARY_DIR}/not-a-dir")
+  file(WRITE "${output_dir}" "")
+  set(output_file "${output_dir}/junit.xml")
+  run_cmake_command(output-junit-invalid ${CMAKE_CTEST_COMMAND} --output-junit "${output_file}")
+endfunction()
+run_output_junit_invalid()
+
 run_cmake_command(invalid-ctest-argument ${CMAKE_CTEST_COMMAND} --not-a-valid-ctest-argument)
 
 block()
