@@ -183,8 +183,8 @@ cmCommonTargetGenerator::GetLinkedTargetDirectories(
         this->GeneratorTarget->GetLinkInformation(config)) {
 
     auto findSyntheticTarget =
-      [this,
-       &config](cmGeneratorTarget const* linkee) -> cmGeneratorTarget const* {
+      [this, &config,
+       cli](cmGeneratorTarget const* linkee) -> cmGeneratorTarget const* {
       if (!linkee) {
         return nullptr;
       }
@@ -196,7 +196,7 @@ cmCommonTargetGenerator::GetLinkedTargetDirectories(
         return it->second.front();
       }
 
-      // Check linked targets to finding synthetic targets for transitive deps
+      // Check linked targets to find synthetic targets for transitive deps
       std::vector<cmGeneratorTarget const*> pending;
       std::set<cmGeneratorTarget const*> visited;
       for (auto const& dep : synthDeps) {
@@ -204,6 +204,19 @@ cmCommonTargetGenerator::GetLinkedTargetDirectories(
           if (synth && visited.insert(synth).second) {
             pending.push_back(synth);
           }
+        }
+      }
+
+      // Also seed the search from direct linked targets that have
+      // CXX20 module sources, in case they hold synthetic deps for
+      // transitive dependencies that we need to inherit. Skip targets
+      // that already have synthetic substitutes in our own synthDeps
+      // (their transitive deps will be explored via the substitute).
+      for (auto const& item : cli->GetItems()) {
+        if (item.Target && item.Target->HaveCxx20ModuleSources() &&
+            synthDeps.find(item.Target) == synthDeps.end() &&
+            visited.insert(item.Target).second) {
+          pending.push_back(item.Target);
         }
       }
 
