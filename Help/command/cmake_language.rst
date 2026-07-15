@@ -564,8 +564,8 @@ Printing Targets
 
 .. versionadded:: 4.5
 
-  .. signature::
-    cmake_language(PRINT_TARGETS <filter>...)
+.. signature::
+  cmake_language(PRINT_TARGETS <filter>...)
 
   Prints the names of all targets that currently exist, one per line,
   annotated with their types (e.g. ``EXECUTABLE``, ``STATIC_LIBRARY``,
