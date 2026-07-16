@@ -80,6 +80,7 @@ b:version-update:
         - .cmake_version_update_linux
         - .linux_x86_64_tags
         - .run_version_update
+    needs: []
 
 # Documentation builds
 
@@ -103,6 +104,7 @@ l:spellcheck:
         - .cmake_spellcheck_linux
         - .linux_x86_64_tags
         - .run_automatically
+    needs: []
 
 l:iwyu-debian13:
     extends:
@@ -111,6 +113,7 @@ l:iwyu-debian13:
         - .linux_x86_64_tags
         - .cmake_cdash_artifacts
         - .run_automatically
+    needs: []
 
 l:tidy-fedora43:
     extends:
@@ -120,6 +123,7 @@ l:tidy-fedora43:
         - .linux_x86_64_tags
         - .cmake_cdash_artifacts
         - .run_automatically
+    needs: []
 
 l:sphinx-fedora43:
     extends:
@@ -131,6 +135,7 @@ l:sphinx-fedora43:
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
         CMAKE_CI_JOB_HELP: "true"
+    needs: []
 
 l:clang-analyzer-fedora43:
     extends:
@@ -140,6 +145,7 @@ l:clang-analyzer-fedora43:
         - .run_automatically
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 l:clazy-fedora43:
     extends:
@@ -147,6 +153,7 @@ l:clazy-fedora43:
         - .cmake_build_linux
         - .linux_x86_64_tags
         - .run_automatically
+    needs: []
 
 # Coverage builds
 
@@ -159,6 +166,7 @@ b:fedora43-gcc-gcov:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:fedora43-gcc-gcov:
     extends:
@@ -195,6 +203,7 @@ b:fedora43-bullseye-coverage:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:fedora43-bullseye-coverage:
     extends:
@@ -233,6 +242,7 @@ b:centos7-x86_64:
         - .run_manually
     variables:
         CMAKE_CI_ARTIFACTS_NAME: "artifacts-centos7-x86_64"
+    needs: []
 
 b:centos7-aarch64:
     extends:
@@ -244,6 +254,7 @@ b:centos7-aarch64:
     variables:
         CMAKE_CI_ARTIFACTS_NAME: "artifacts-centos7-aarch64"
         CMAKE_CI_NO_MR: "true"
+    needs: []
 
 t:debian13-ninja:
     extends:
@@ -625,6 +636,7 @@ b:fedora43-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
+    needs: []
 
 b:fedora43-makefiles-symlinked:
     extends:
@@ -635,6 +647,7 @@ b:fedora43-makefiles-symlinked:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:debian13-makefiles-inplace:
     extends:
@@ -644,6 +657,7 @@ b:debian13-makefiles-inplace:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:debian13-extdeps:
     extends:
@@ -653,6 +667,7 @@ b:debian13-extdeps:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:debian13-aarch64-extdeps:
     extends:
@@ -662,6 +677,7 @@ b:debian13-aarch64-extdeps:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:fedora43-extdeps:
     extends:
@@ -671,6 +687,7 @@ b:fedora43-extdeps:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:fedora43-ninja:
     extends:
@@ -1028,6 +1045,7 @@ b:fedora43-asan:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:fedora43-asan:
     extends:
@@ -1065,6 +1083,7 @@ b:macos-x86_64-ninja:
         - .run_manually
     variables:
         CMAKE_CI_NO_MR: "true"
+    needs: []
 
 b:macos-arm64-ninja:
     extends:
@@ -1075,6 +1094,7 @@ b:macos-arm64-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
+    needs: []
 
 b:macos-arm64-ninja-symlinked:
     extends:
@@ -1094,6 +1114,7 @@ b:macos-arm64-pch:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:macos-x86_64-ninja:
     extends:
@@ -1140,6 +1161,7 @@ b:macos-x86_64-makefiles:
         - .cmake_build_artifacts
         - .macos_x86_64_tags
         - .run_manually
+    needs: []
 
 t:macos-x86_64-makefiles:
     extends:
@@ -1281,6 +1303,7 @@ b:windows-vs2026-x64-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
+    needs: []
 
 b:windows-vs2026-x64-pch:
     extends:
@@ -1290,6 +1313,7 @@ b:windows-vs2026-x64-pch:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:windows-vs2026-x64-ninja:
     extends:
@@ -1581,6 +1605,7 @@ b:windows-arm64-vs2026-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:windows-arm64-vs2026-ninja:
     extends:
