@@ -94,6 +94,7 @@ l:codespell:
         - .cmake_codespell_linux
         - .linux_x86_64_tags
         - .run_automatically
+    needs: []
 
 l:iwyu-debian12:
     extends:
@@ -102,6 +103,7 @@ l:iwyu-debian12:
         - .linux_x86_64_tags
         - .cmake_cdash_artifacts
         - .run_automatically
+    needs: []
 
 l:tidy-fedora41:
     extends:
@@ -111,6 +113,7 @@ l:tidy-fedora41:
         - .linux_x86_64_tags
         - .cmake_cdash_artifacts
         - .run_automatically
+    needs: []
 
 l:sphinx-fedora41:
     extends:
@@ -122,6 +125,7 @@ l:sphinx-fedora41:
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
         CMAKE_CI_JOB_HELP: "true"
+    needs: []
 
 l:clang-analyzer-fedora41:
     extends:
@@ -131,6 +135,7 @@ l:clang-analyzer-fedora41:
         - .run_automatically
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 # Linux builds
 
@@ -143,6 +148,7 @@ b:centos7-x86_64:
         - .run_manually
     variables:
         CMAKE_CI_ARTIFACTS_NAME: "artifacts-centos7-x86_64"
+    needs: []
 
 b:centos7-aarch64:
     extends:
@@ -154,6 +160,7 @@ b:centos7-aarch64:
     variables:
         CMAKE_CI_ARTIFACTS_NAME: "artifacts-centos7-aarch64"
         CMAKE_CI_NO_MR: "true"
+    needs: []
 
 t:debian12-ninja:
     extends:
@@ -452,6 +459,7 @@ b:fedora41-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
+    needs: []
 
 b:fedora41-makefiles-symlinked:
     extends:
@@ -462,6 +470,7 @@ b:fedora41-makefiles-symlinked:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:debian12-makefiles-inplace:
     extends:
@@ -471,6 +480,7 @@ b:debian12-makefiles-inplace:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:debian12-extdeps:
     extends:
@@ -480,6 +490,7 @@ b:debian12-extdeps:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:debian12-aarch64-extdeps:
     extends:
@@ -489,6 +500,7 @@ b:debian12-aarch64-extdeps:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:fedora41-extdeps:
     extends:
@@ -498,6 +510,7 @@ b:fedora41-extdeps:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:fedora41-ninja:
     extends:
@@ -787,6 +800,7 @@ b:fedora41-asan:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:fedora41-asan:
     extends:
@@ -810,6 +824,7 @@ b:macos-x86_64-ninja:
         - .run_manually
     variables:
         CMAKE_CI_NO_MR: "true"
+    needs: []
 
 b:macos-arm64-ninja:
     extends:
@@ -820,6 +835,7 @@ b:macos-arm64-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
+    needs: []
 
 b:macos-arm64-ninja-symlinked:
     extends:
@@ -840,6 +856,7 @@ b:macos-arm64-curl:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:macos-arm64-pch:
     extends:
@@ -849,6 +866,7 @@ b:macos-arm64-pch:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:macos-x86_64-ninja:
     extends:
@@ -906,6 +924,7 @@ b:macos-x86_64-makefiles:
         - .cmake_build_artifacts
         - .macos_x86_64_tags
         - .run_manually
+    needs: []
 
 t:macos-x86_64-makefiles:
     extends:
@@ -1035,6 +1054,7 @@ b:windows-vs2022-x64-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
+    needs: []
 
 b:windows-vs2022-x64-pch:
     extends:
@@ -1044,6 +1064,7 @@ b:windows-vs2022-x64-pch:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:windows-vs2022-x64-ninja:
     extends:
@@ -1302,6 +1323,7 @@ b:windows-arm64-vs2022-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:windows-arm64-vs2022-ninja:
     extends:
