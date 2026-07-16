@@ -939,7 +939,7 @@ t:macos-arm64-ninja-multi:
     extends:
         - .macos_arm64_ninja_multi
         - .cmake_test_macos_external
-        - .macos_arm64_tags_ext
+        - .macos_arm64_tags
         - .cmake_junit_artifacts
         - .run_dependent
     needs:
@@ -963,7 +963,7 @@ t:macos-arm64-xcode:
     extends:
         - .macos_arm64_xcode
         - .cmake_test_macos_external
-        - .macos_arm64_tags_ext
+        - .macos_arm64_tags
         - .cmake_junit_artifacts
         - .run_dependent
     needs:
@@ -973,7 +973,7 @@ t:macos-arm64-xcode-symlinked:
     extends:
         - .macos_arm64_xcode_symlinked
         - .cmake_test_macos_external
-        - .macos_arm64_tags_ext
+        - .macos_arm64_tags
         - .cmake_junit_artifacts
         - .run_dependent
     needs:
@@ -997,7 +997,7 @@ t:macos-arm64-xcode-ub:
     extends:
         - .macos_arm64_xcode_ub
         - .cmake_test_macos_external
-        - .macos_arm64_tags_ext
+        - .macos_arm64_tags
         - .cmake_junit_artifacts
         - .run_dependent
     needs:
@@ -1010,7 +1010,7 @@ b:macos-package:
         - .macos_package
         - .cmake_build_macos
         - .cmake_release_artifacts
-        - .macos_arm64_tags_package
+        - .macos_arm64_tags
         - .run_only_for_package
     needs:
         - p:doc-package
@@ -1029,7 +1029,7 @@ b:macos10.10-package:
         - .macos10.10_package
         - .cmake_build_macos
         - .cmake_release_artifacts
-        - .macos_arm64_tags_package
+        - .macos_arm64_tags
         - .run_only_for_package
     needs:
         - p:doc-package
