@@ -79,6 +79,7 @@ b:version-update:
         - .cmake_version_update_linux
         - .linux_x86_64_tags
         - .run_version_update
+    needs: []
 
 # Documentation builds
 
@@ -102,6 +103,7 @@ l:spellcheck:
         - .cmake_spellcheck_linux
         - .linux_x86_64_tags
         - .run_automatically
+    needs: []
 
 l:iwyu-debian12:
     extends:
@@ -110,6 +112,7 @@ l:iwyu-debian12:
         - .linux_x86_64_tags
         - .cmake_cdash_artifacts
         - .run_automatically
+    needs: []
 
 l:tidy-fedora42:
     extends:
@@ -119,6 +122,7 @@ l:tidy-fedora42:
         - .linux_x86_64_tags
         - .cmake_cdash_artifacts
         - .run_automatically
+    needs: []
 
 l:sphinx-fedora42:
     extends:
@@ -130,6 +134,7 @@ l:sphinx-fedora42:
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
         CMAKE_CI_JOB_HELP: "true"
+    needs: []
 
 l:clang-analyzer-fedora42:
     extends:
@@ -139,6 +144,7 @@ l:clang-analyzer-fedora42:
         - .run_automatically
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 # Linux builds
 
@@ -151,6 +157,7 @@ b:centos7-x86_64:
         - .run_manually
     variables:
         CMAKE_CI_ARTIFACTS_NAME: "artifacts-centos7-x86_64"
+    needs: []
 
 b:centos7-aarch64:
     extends:
@@ -162,6 +169,7 @@ b:centos7-aarch64:
     variables:
         CMAKE_CI_ARTIFACTS_NAME: "artifacts-centos7-aarch64"
         CMAKE_CI_NO_MR: "true"
+    needs: []
 
 t:debian12-ninja:
     extends:
@@ -501,6 +509,7 @@ b:fedora42-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
+    needs: []
 
 b:fedora42-makefiles-symlinked:
     extends:
@@ -511,6 +520,7 @@ b:fedora42-makefiles-symlinked:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:debian12-makefiles-inplace:
     extends:
@@ -520,6 +530,7 @@ b:debian12-makefiles-inplace:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:debian12-extdeps:
     extends:
@@ -529,6 +540,7 @@ b:debian12-extdeps:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:debian12-aarch64-extdeps:
     extends:
@@ -538,6 +550,7 @@ b:debian12-aarch64-extdeps:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:fedora42-extdeps:
     extends:
@@ -547,6 +560,7 @@ b:fedora42-extdeps:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:fedora42-ninja:
     extends:
@@ -897,6 +911,7 @@ b:fedora42-asan:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:fedora42-asan:
     extends:
@@ -920,6 +935,7 @@ b:macos-x86_64-ninja:
         - .run_manually
     variables:
         CMAKE_CI_NO_MR: "true"
+    needs: []
 
 b:macos-arm64-ninja:
     extends:
@@ -930,6 +946,7 @@ b:macos-arm64-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
+    needs: []
 
 b:macos-arm64-ninja-symlinked:
     extends:
@@ -950,6 +967,7 @@ b:macos-arm64-curl:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 b:macos-arm64-pch:
     extends:
@@ -959,6 +977,7 @@ b:macos-arm64-pch:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:macos-x86_64-ninja:
     extends:
@@ -1016,6 +1035,7 @@ b:macos-x86_64-makefiles:
         - .cmake_build_artifacts
         - .macos_x86_64_tags
         - .run_manually
+    needs: []
 
 t:macos-x86_64-makefiles:
     extends:
@@ -1145,6 +1165,7 @@ b:windows-vs2022-x64-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_CONTINUOUS: "true"
+    needs: []
 
 b:windows-vs2022-x64-pch:
     extends:
@@ -1154,6 +1175,7 @@ b:windows-vs2022-x64-pch:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:windows-vs2022-x64-ninja:
     extends:
@@ -1421,6 +1443,7 @@ b:windows-arm64-vs2022-ninja:
         - .run_manually
     variables:
         CMAKE_CI_JOB_NIGHTLY: "true"
+    needs: []
 
 t:windows-arm64-vs2022-ninja:
     extends:
