@@ -90,11 +90,10 @@ public:
 private:
   cmPackageInfoReader() = default;
 
-  cmTarget* AddLibraryComponent(cmMakefile* makefile, cm::TargetType type,
-                                std::string const& name,
-                                Json::Value const& data,
-                                std::string const& package,
-                                cm::ImportedTargetScope scope) const;
+  cmTarget* AddComponent(cmMakefile* makefile, cm::TargetType type,
+                         std::string const& name, Json::Value const& data,
+                         std::string const& package,
+                         cm::ImportedTargetScope scope) const;
 
   void AddTargetConfiguration(cmTarget* target,
                               cm::string_view configuration) const;
