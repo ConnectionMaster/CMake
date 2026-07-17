@@ -193,7 +193,7 @@ cmCommonTargetGenerator::GetLinkedTargetDirectories(
       auto const& synthDeps = this->GeneratorTarget->GetSyntheticDeps(config);
       auto it = synthDeps.find(linkee);
       if (it != synthDeps.end() && !it->second.empty()) {
-        return it->second.front();
+        return *it->second.begin();
       }
 
       // Check linked targets to find synthetic targets for transitive deps
@@ -227,7 +227,7 @@ cmCommonTargetGenerator::GetLinkedTargetDirectories(
         auto itLinkeeSynth = transitiveSynthDeps.find(linkee);
         if (itLinkeeSynth != transitiveSynthDeps.end() &&
             !itLinkeeSynth->second.empty()) {
-          return itLinkeeSynth->second.front();
+          return *itLinkeeSynth->second.begin();
         }
         for (auto const& entry : transitiveSynthDeps) {
           for (auto const* synth : entry.second) {
