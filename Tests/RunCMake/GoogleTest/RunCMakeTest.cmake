@@ -504,6 +504,26 @@ function(run_GoogleTest_DEF_SOURCE_LINE)
   )
 endfunction()
 
+function(run_GoogleTest_discovery_duplicate)
+  # Use a single build tree for a few tests without cleaning.
+  set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/GoogleTest-discovery-duplicate-build)
+  set(RunCMake_TEST_NO_CLEAN 1)
+  if(NOT RunCMake_GENERATOR_IS_MULTI_CONFIG)
+    set(RunCMake_TEST_OPTIONS -DCMAKE_BUILD_TYPE=Debug)
+  endif()
+  file(REMOVE_RECURSE "${RunCMake_TEST_BINARY_DIR}")
+  file(MAKE_DIRECTORY "${RunCMake_TEST_BINARY_DIR}")
+
+  run_cmake(GoogleTestDiscoveryDuplicate)
+
+  run_cmake_command(GoogleTest-discovery-duplicate-build
+    ${CMAKE_COMMAND}
+    --build .
+    --config Debug
+    --target fake_gtest
+  )
+endfunction()
+
 foreach(DISCOVERY_MODE POST_BUILD PRE_TEST)
   message(STATUS "Testing ${DISCOVERY_MODE} discovery mode via CMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE global override...")
   run_GoogleTest(${DISCOVERY_MODE})
@@ -559,3 +579,5 @@ run_GoogleTest_DEF_SOURCE_LINE()
 if (NOT RunCMake_GENERATOR MATCHES "(Borland|NMake|Watcom)")
   run_GoogleTest_discovery_post_build_race()
 endif()
+
+run_GoogleTest_discovery_duplicate()
