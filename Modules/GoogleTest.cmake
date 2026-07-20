@@ -685,6 +685,7 @@ function(gtest_discover_tests target)
     string(CONCAT discovery_content
       "include(\"${CMAKE_ROOT}/Modules/GoogleTestAddTests.cmake\")"         "\n"
       "gtest_discover_tests_impl("                                          "\n"
+      "  TEST_TARGET"            " [==[${target}]==]"                       "\n"
       "  TEST_EXECUTABLE"        " [==[$<TARGET_FILE:${target}>]==]"        "\n"
       "  TEST_EXECUTOR"          " [==[${test_executor}]==]"                "\n"
       "  TEST_WORKING_DIR"       " [==[${arg_WORKING_DIRECTORY}]==]"        "\n"
