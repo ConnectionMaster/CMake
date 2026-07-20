@@ -374,6 +374,27 @@ function(run_GoogleTest_discovery_flush_script DISCOVERY_MODE)
   )
 endfunction()
 
+function(run_GoogleTest_discovery_post_build_race)
+  # Use a single build tree for this test without cleaning.
+  set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/GoogleTest-discovery-post-build-race)
+  set(RunCMake_TEST_NO_CLEAN 1)
+  if(NOT RunCMake_GENERATOR_IS_MULTI_CONFIG)
+    set(RunCMake_TEST_OPTIONS -DCMAKE_BUILD_TYPE=Debug)
+  endif()
+  file(REMOVE_RECURSE "${RunCMake_TEST_BINARY_DIR}")
+  file(MAKE_DIRECTORY "${RunCMake_TEST_BINARY_DIR}")
+
+  run_cmake(GoogleTestDiscoveryPostBuildRace)
+
+  run_cmake_command(GoogleTest-discovery-post-build-race-build
+    ${CMAKE_COMMAND}
+    --build .
+    --config Debug
+    -j 16
+    --target check_discovery_json_files
+  )
+endfunction()
+
 function(run_GoogleTest_discovery_test_list_scoped DISCOVERY_MODE)
   # Use a single build tree for a few tests without cleaning.
   set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/GoogleTest-discovery-test-list-scoped-build)
@@ -533,3 +554,8 @@ endblock()
 
 run_GoogleTest_LegacyParser()
 run_GoogleTest_DEF_SOURCE_LINE()
+
+# This test is meaningful only for generators which support parallel builds.
+if (NOT RunCMake_GENERATOR MATCHES "(Borland|NMake|Watcom)")
+  run_GoogleTest_discovery_post_build_race()
+endif()
