@@ -664,7 +664,8 @@ if (NOT Skip_COMPILE_TRACE_QUERY_Case)
       CHECK_SCRIPT check-data-dir.cmake
     )
   endif()
-  if (RunCMake_GENERATOR MATCHES "Ninja" AND NOT CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
+  # FIXME(#16731): ar on macOS does not support response files.
+  if (RunCMake_GENERATOR MATCHES "Ninja" AND NOT APPLE)
     instrument(cmake-command-compile-trace-rsp
       BUILD COMPILE_TRACE_QUERY
       CONFIGURE_ARGS
