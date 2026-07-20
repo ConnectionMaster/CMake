@@ -93,6 +93,23 @@ function(run_GoogleTest DISCOVERY_MODE)
     --no-label-summary
   )
 
+  run_cmake_command(GoogleTest-test9
+    ${CMAKE_CTEST_COMMAND}
+    -C Debug
+    -L TEST9
+    --no-label-summary
+  )
+
+  file(WRITE "${RunCMake_TEST_BINARY_DIR}/test9-names.txt"
+    "TEST:newline_name/suite.case/trailing_param!9\n"
+  )
+  run_cmake_command(GoogleTest-test9-from-file
+    ${CMAKE_CTEST_COMMAND}
+    -C Debug
+    --tests-from-file "${RunCMake_TEST_BINARY_DIR}/test9-names.txt"
+    --no-label-summary
+  )
+
   run_cmake_command(GoogleTest-test-missing
     ${CMAKE_CTEST_COMMAND}
     -C Debug
