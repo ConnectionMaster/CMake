@@ -694,6 +694,33 @@ function(run_configure_empty_bindir)
 endfunction()
 run_configure_empty_bindir()
 
+# Verify that ctest_configure() does not trigger a spurious unused-cli
+# warning about BUILDNAME/SITE when CTEST_SITE/CTEST_BUILD_NAME are set
+# but the project does not include(CTest).  See issue #27953.
+function(run_configure_site_buildname_no_unused_cli)
+  set(src "${RunCMake_BINARY_DIR}/configure-site-buildname-no-unused-cli-src")
+  set(bin "${RunCMake_BINARY_DIR}/configure-site-buildname-no-unused-cli-bin")
+  file(REMOVE_RECURSE "${src}" "${bin}")
+  file(MAKE_DIRECTORY "${src}")
+  file(WRITE "${src}/CMakeLists.txt"
+    "cmake_minimum_required(VERSION 3.10)\nproject(Minimal LANGUAGES NONE)\n")
+  set(RunCMake_TEST_BINARY_DIR "${bin}")
+  set(RunCMake_TEST_NO_CLEAN 1)
+  ctest_source_dir_generator_args(generator_args)
+  set(RunCMake_TEST_NOT_EXPECT_stdout "CMake Warning \\(unused-cli\\)")
+  run_cmake_command(configure-site-buildname-no-unused-cli
+    ${CMAKE_CTEST_COMMAND}
+    --source-dir "${src}"
+    --build-dir  "${bin}"
+    ${generator_args}
+    -D "CTEST_SITE=Test Site"
+    -D "CTEST_BUILD_NAME=Test Build"
+    -T Configure
+    -V)
+  unset(RunCMake_TEST_NOT_EXPECT_stdout)
+endfunction()
+run_configure_site_buildname_no_unused_cli()
+
 # Verify expected error condition when --source-dir does not contain
 # a CMakeLists.txt file.
 function(run_configure_no_cmakelists)
