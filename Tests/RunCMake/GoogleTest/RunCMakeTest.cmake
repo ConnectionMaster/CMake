@@ -476,12 +476,14 @@ function(run_GoogleTest_discovery_duplicate)
   run_cmake(GoogleTestDiscoveryDuplicate)
   set(RunCMake_TEST_NO_CLEAN 1)
 
+  set(RunCMake_TEST_OUTPUT_MERGE 1)
   run_cmake_command(GoogleTest-discovery-duplicate-build
     ${CMAKE_COMMAND}
     --build .
     --config Debug
     --target fake_gtest
   )
+  unset(RunCMake_TEST_OUTPUT_MERGE)
 endfunction()
 
 foreach(DISCOVERY_MODE POST_BUILD PRE_TEST)
