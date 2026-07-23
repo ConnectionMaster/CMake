@@ -169,16 +169,24 @@ elseif(NOT TARGET Foo::PrefixTest)
   message(SEND_ERROR "Foo::PrefixTest missing !")
 elseif(NOT TARGET Foo::RelativeTest)
   message(SEND_ERROR "Foo::RelativeTest missing !")
+elseif(NOT TARGET Foo::ExecutableTest)
+  message(SEND_ERROR "Foo::ExecutableTest missing !")
 elseif(NOT TARGET Foo::Empty)
   message(SEND_ERROR "Foo::Empty missing !")
 else()
+  expect_property(Foo::PrefixTest TYPE "type" "INTERFACE_LIBRARY")
   expect_property(
     Foo::PrefixTest INTERFACE_INCLUDE_DIRECTORIES "includes"
     "$<$<CONFIG:default>:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 
+  expect_property(Foo::RelativeTest TYPE "type" "INTERFACE_LIBRARY")
   expect_property(
     Foo::RelativeTest INTERFACE_INCLUDE_DIRECTORIES "includes"
     "$<$<CONFIG:default>:${CMAKE_CURRENT_SOURCE_DIR}/cps/../include>")
+
+  expect_property(Foo::ExecutableTest TYPE "type" "EXECUTABLE")
+  expect_property(Foo::ExecutableTest IMPORTED_LOCATION_DEFAULT "location"
+    "${CMAKE_CURRENT_SOURCE_DIR}/foo")
 
   expect_global(Foo::Empty FALSE)
 endif()

@@ -869,7 +869,7 @@ void cmPackageInfoReader::ReadCxxModulesMetadata(
 #endif
 }
 
-cmTarget* cmPackageInfoReader::AddLibraryComponent(
+cmTarget* cmPackageInfoReader::AddComponent(
   cmMakefile* makefile, cm::TargetType type, std::string const& name,
   Json::Value const& data, std::string const& package,
   cm::ImportedTargetScope scope) const
@@ -959,14 +959,16 @@ bool cmPackageInfoReader::ImportTargets(cmMakefile* makefile,
     }
 
     auto createTarget = [&](cm::TargetType typeEnum) {
-      return this->AddLibraryComponent(makefile, typeEnum, fullName, *ci,
-                                       package, scope);
+      return this->AddComponent(makefile, typeEnum, fullName, *ci, package,
+                                scope);
     };
 
     cmTarget* target = nullptr;
     if (type == "symbolic"_s) {
       target = createTarget(cm::TargetType::INTERFACE_LIBRARY);
       target->SetSymbolic(true);
+    } else if (type == "executable"_s) {
+      target = createTarget(cm::TargetType::EXECUTABLE);
     } else if (type == "dylib"_s) {
       target = createTarget(cm::TargetType::SHARED_LIBRARY);
     } else if (type == "module"_s) {
