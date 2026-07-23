@@ -701,13 +701,18 @@ void cmGlobalGenerator::EnableLanguage(
     fpath += "/CMakeSystem.cmake";
     if (cmSystemTools::FileExists(fpath)) {
       mf->ReadListFile(fpath);
-      // Fail early if CMAKE_TOOLCHAIN_FILE is different than what is stored in
-      // CMakeSystem.cmake to erase the cache because introspection results may
-      // become invalid
+      // If the toolchain file changes, the introspection results may become
+      // invalid, and so the cache must be deleted. The CMAKE_TOOLCHAIN_FILE
+      // value could be input the same way but be different in the cache due to
+      // normalization and relative path searching, so the value is checked
+      // against the original input to decide if the file path has changed.
       cmValue toolchainFile = mf->GetDefinition("CMAKE_TOOLCHAIN_FILE");
+      cmValue inputToolchainFile =
+        mf->GetDefinition("_CMAKE_INPUT_TOOLCHAIN_FILE");
       cmValue storedToolchainFile =
         mf->GetDefinition("_CMAKE_SYSTEM_TOOLCHAIN_FILE");
-      if (toolchainFile && toolchainFile != storedToolchainFile) {
+      if (toolchainFile && toolchainFile != inputToolchainFile &&
+          toolchainFile != storedToolchainFile) {
         mf->GetState()->AddDeleteCacheChangeVar("CMAKE_TOOLCHAIN_FILE",
                                                 *toolchainFile);
         for (std::string const& lang : cur_languages) {
